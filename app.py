@@ -11,6 +11,22 @@ DATA_PATH = "./"  # folder where excel files are stored
 # LOAD DATA
 # =========================
 @st.cache_data
+
+def load_data():
+    data = {}
+    files = [
+        "fact_project_financials.xlsx"
+    ]
+
+    for file in files:
+        path = os.path.join(DATA_PATH, file)
+        if os.path.exists(path):
+            data[file] = pd.read_excel(path)
+        else:
+            print(f"❌ Missing file: {file}")
+
+    return data
+
 def load_data():
     data = {}
     files = [
@@ -29,6 +45,8 @@ def load_data():
         if os.path.exists(path):
             data[file] = pd.read_excel(path)
     return data
+
+st.write("Loaded files:", list(data.keys()))
 
 # =========================
 # SEMANTIC LAYER (METRICS)
