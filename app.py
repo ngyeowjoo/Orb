@@ -5,7 +5,7 @@ import os
 # =========================
 # CONFIG
 # =========================
-DATA_PATH = "./"  # folder where excel files are stored
+DATA_PATH = "./data"  # folder where excel files are stored
 
 # =========================
 # LOAD DATA
