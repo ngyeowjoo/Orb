@@ -33,6 +33,7 @@ def load_data():
             data[file] = pd.read_excel(path)
     return data
 
+data = load_data()
 st.write("Payroll columns:", data["fact_payroll.xlsx"].columns)
 st.write("KPI columns:", data["fact_employee_kpi.xlsx"].columns)
 
