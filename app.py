@@ -33,7 +33,8 @@ def load_data():
             data[file] = pd.read_excel(path)
     return data
 
-
+st.write("Payroll columns:", data["fact_payroll.xlsx"].columns)
+st.write("KPI columns:", data["fact_employee_kpi.xlsx"].columns)
 
 # =========================
 # SEMANTIC LAYER (METRICS)
