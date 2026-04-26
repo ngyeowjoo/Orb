@@ -47,7 +47,7 @@ def calculate_project_profit(df_project_fin):
 def calculate_employee_cost(df_payroll):
     df = df_payroll.copy()
     df["total_cost"] = (
-        df["salary"] + df["incentive"] + df["allowances"] + df["bonus"]
+        df["salary"] + df["incentive"] + df["bonus"]
     )
     return df
 
