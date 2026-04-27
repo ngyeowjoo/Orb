@@ -185,7 +185,7 @@ sel_proj  = st.sidebar.selectbox("Project", all_projs)
 all_depts = ["All"] + sorted(D["dim_employee"]["department"].dropna().unique().tolist())
 sel_dept  = st.sidebar.selectbox("Department", all_depts)
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🤖 AI")
+st.sidebar.markdown("### 🤖 JoAI")
 ai_depth = st.sidebar.selectbox("Response depth", ["Concise","Detailed","Strategic"])
 auto_ai  = st.sidebar.toggle("Auto AI insight", value=True)
 
