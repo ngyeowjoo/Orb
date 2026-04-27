@@ -202,10 +202,10 @@ if question:
 # =========================
 # TOP ISSUES DISPLAY
 # =========================
-st.subheader("🚨 Top Issues")
+#st.subheader("🚨 Top Issues")
 
-issues_df = get_top_issues()
+#issues_df = get_top_issues()
 
-st.write(
-    issues_df.style.apply(highlight_issues, axis=1)
-)
+#st.write(
+#    issues_df.style.apply(highlight_issues, axis=1)
+#)
