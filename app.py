@@ -206,6 +206,6 @@ st.subheader("🚨 Top Issues")
 
 issues_df = get_top_issues()
 
-st.dataframe(
+st.write(
     issues_df.style.apply(highlight_issues, axis=1)
 )
