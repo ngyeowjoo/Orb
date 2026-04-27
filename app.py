@@ -1,5 +1,4 @@
 import streamlit as st
-    import streamlit as st
 hide_style = """
     <style>
     #MainMenu {visibility: hidden;}
