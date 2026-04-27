@@ -126,7 +126,7 @@ if question:
     if "loss" in question_lower:
         result = get_loss_making_projects(data)
 
-    elseif "profit" in question_lower:
+    elif "profit" in question_lower:
         result = get_profit_making_projects(data)
 
     elif "utilisation" in question_lower:
