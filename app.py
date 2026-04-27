@@ -43,7 +43,7 @@ st.sidebar.header("⚙️ Controls")
 
 util_threshold = st.sidebar.slider("Utilisation Threshold", 0.0, 1.0, 0.6, 0.05)
 kpi_threshold = st.sidebar.slider("KPI Threshold", 0.0, 1.0, 0.8, 0.05)
-cost_threshold = st.sidebar.number_input("High Cost Threshold", value=4000)
+cost_threshold = st.sidebar.number_input("Cost Threshold", value=4000)
 
 # =========================
 # SEMANTIC LAYER
@@ -64,7 +64,7 @@ def calculate_cost():
     return df
 
 # =========================
-# BUILD DATASET
+# BUILD DATASET (FOR CORRELATION)
 # =========================
 def build_analysis_dataset():
     util = calculate_utilisation()
@@ -83,7 +83,7 @@ def compute_correlation(df):
     return df.corr(numeric_only=True)
 
 # =========================
-# AI EXPLANATION (OpenAI)
+# AI EXPLANATION
 # =========================
 def explain_with_ai(corr_df):
     api_key = st.secrets.get("OPENAI_API_KEY", None)
@@ -94,13 +94,13 @@ def explain_with_ai(corr_df):
     prompt = f"""
 You are a COO analytics assistant.
 
-Explain the following correlation matrix in business terms.
+Explain this correlation matrix in business terms.
 
 Focus on:
 - Key relationships
 - Risks
 - Opportunities
-- Actionable recommendations
+- Actions
 
 Correlation Matrix:
 {corr_df.to_string()}
@@ -130,53 +130,76 @@ Correlation Matrix:
 def parse_question(q):
     q = q.lower()
 
+    # correlation
     if "correlation" in q or "relationship" in q:
-        return "correlation"
+        return "correlation", None, None, None
 
+    # metric
     if "util" in q:
-        return "utilisation"
+        metric = "utilisation"
     elif "kpi" in q or "performance" in q:
-        return "kpi"
+        metric = "kpi"
     elif "cost" in q:
-        return "cost"
+        metric = "cost"
+    else:
+        metric = None
 
-    return None
+    # direction
+    if any(x in q for x in ["low", "below", "under", "worst", "bottom"]):
+        direction = "below"
+    elif any(x in q for x in ["high", "above", "over", "top", "best"]):
+        direction = "above"
+    else:
+        direction = "above"
+
+    # threshold
+    match = re.search(r"(\d*\.?\d+)", q)
+    value = float(match.group(1)) if match else None
+
+    # top N
+    match_n = re.search(r"(top|bottom)\s*(\d+)", q)
+    top_n = int(match_n.group(2)) if match_n else None
+
+    return metric, direction, value, top_n
 
 # =========================
-# HIGHLIGHT FUNCTION
+# METRIC ENGINE
 # =========================
-def highlight_issues(row):
-    color = ""
+def get_metric_df(metric):
+    if metric == "utilisation":
+        return calculate_utilisation(), "utilisation"
+    elif metric == "kpi":
+        return calculate_kpi(), "kpi"
+    elif metric == "cost":
+        return calculate_cost(), "total_cost"
+    return pd.DataFrame(), None
 
-    if row["issue"] == "Low Utilisation":
-        color = "background-color: #ffcccc"
-    elif row["issue"] == "Low KPI":
-        color = "background-color: #fff3cd"
-    elif row["issue"] == "High Cost":
-        color = "background-color: #f8d7da"
+def apply_condition(df, column, direction, value):
+    if value is None:
+        return df
 
-    return [color]*len(row)
+    if direction == "below":
+        return df[df[column] < value]
+    else:
+        return df[df[column] > value]
+
+def apply_top_n(df, column, direction, n):
+    if n is None:
+        return df
+
+    return df.sort_values(column, ascending=(direction == "below")).head(n)
 
 # =========================
-# TOP ISSUES
+# SIMPLE INSIGHT ENGINE
 # =========================
-def get_top_issues():
-    util = calculate_utilisation()
-    util = util[util["utilisation"] < util_threshold]
+def generate_insight(df, metric, direction):
+    if df.empty:
+        return "No significant findings."
 
-    kpi = calculate_kpi()
-    kpi = kpi[kpi["kpi"] < kpi_threshold]
-
-    cost = calculate_cost()
-    cost = cost[cost["total_cost"] > cost_threshold]
-
-    issues = pd.concat([
-        util.assign(issue="Low Utilisation"),
-        kpi.assign(issue="Low KPI"),
-        cost.assign(issue="High Cost")
-    ])
-
-    return issues.head(10)
+    if direction == "above":
+        return f"These are high {metric} cases. Review for strong performance or cost concentration."
+    else:
+        return f"These are low {metric} cases. Indicates potential underperformance or inefficiency."
 
 # =========================
 # UI INPUT
@@ -184,9 +207,10 @@ def get_top_issues():
 question = st.text_input("💬 Ask a question")
 
 if question:
-    intent = parse_question(question)
+    metric, direction, value, top_n = parse_question(question)
 
-    if intent == "correlation":
+    # ===== CORRELATION =====
+    if metric == "correlation":
         df = build_analysis_dataset()
         corr = compute_correlation(df)
 
@@ -196,16 +220,49 @@ if question:
         st.subheader("🧠 AI Insight")
         st.write(explain_with_ai(corr))
 
+    # ===== METRIC ANALYSIS =====
+    elif metric:
+        df, column = get_metric_df(metric)
+
+        # fallback thresholds
+        if value is None:
+            if metric == "utilisation":
+                value = util_threshold
+            elif metric == "kpi":
+                value = kpi_threshold
+            elif metric == "cost":
+                value = cost_threshold
+
+        result = apply_condition(df, column, direction, value)
+        result = apply_top_n(result, column, direction, top_n)
+
+        st.subheader("📌 Results")
+        st.dataframe(result)
+
+        st.subheader("🧠 Insight")
+        st.write(generate_insight(result, metric, direction))
+
     else:
-        st.info("Try asking about correlation, utilisation, KPI or cost.")
+        st.warning("Try: utilisation, KPI, cost, or correlation")
 
 # =========================
-# TOP ISSUES DISPLAY
+# TOP ISSUES (NO HIGHLIGHT)
 # =========================
-#st.subheader("🚨 Top Issues")
+st.subheader("🚨 Top Issues")
 
-#issues_df = get_top_issues()
+low_util = calculate_utilisation()
+low_util = low_util[low_util["utilisation"] < util_threshold]
 
-#st.write(
-#    issues_df.style.apply(highlight_issues, axis=1)
-#)
+low_kpi = calculate_kpi()
+low_kpi = low_kpi[low_kpi["kpi"] < kpi_threshold]
+
+high_cost = calculate_cost()
+high_cost = high_cost[high_cost["total_cost"] > cost_threshold]
+
+issues = pd.concat([
+    low_util.assign(issue="Low Utilisation"),
+    low_kpi.assign(issue="Low KPI"),
+    high_cost.assign(issue="High Cost")
+])
+
+st.dataframe(issues.head(10))
