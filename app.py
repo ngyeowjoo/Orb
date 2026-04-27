@@ -132,7 +132,6 @@ def emp_summary():
         sick=("sick_leaves","sum"), total_leaves=("total_leaves","sum")).reset_index()
     rev = D["fact_emp_revenue"].groupby("employee_id").agg(
         total_revenue=("revenue_contribution","sum"),
-        total_emp_cost=("total_cost","sum"),
         net_contribution=("net_contribution","sum"),
         avg_rev_per_hr=("revenue_per_hour","mean")).reset_index()
     df = (D["dim_employee"]
