@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 # =========================
-# CUSTOM CSS — Dark Executive Theme
+# CUSTOM CSS — Light Amber Theme
 # =========================
 st.markdown("""
 <style>
@@ -32,59 +32,69 @@ html, body, [class*="css"] {
 }
 
 .stApp {
-    background: #0a0c10;
-    color: #e8eaf0;
+    background: #fdfaf4;
+    color: #1a1509;
 }
 
 section[data-testid="stSidebar"] {
-    background: #0f1217;
-    border-right: 1px solid #1e2330;
+    background: #fff8e8;
+    border-right: 1px solid #f0d88a;
+}
+
+section[data-testid="stSidebar"] * {
+    color: #3a2e0a !important;
 }
 
 .stTextInput > div > div > input {
-    background: #111520;
-    border: 1px solid #2a3050;
+    background: #ffffff;
+    border: 1.5px solid #f0c842;
     border-radius: 8px;
-    color: #e8eaf0;
+    color: #1a1509;
     font-family: 'DM Mono', monospace;
     font-size: 0.9rem;
     padding: 12px 16px;
 }
 
 .stTextInput > div > div > input:focus {
-    border-color: #4f6fff;
-    box-shadow: 0 0 0 2px rgba(79,111,255,0.15);
+    border-color: #F9A602;
+    box-shadow: 0 0 0 3px rgba(249,166,2,0.18);
+}
+
+.stTextInput > div > div > input::placeholder {
+    color: #b89040;
 }
 
 .stButton > button {
-    background: #4f6fff;
-    color: white;
+    background: #F9A602;
+    color: #1a1509;
     border: none;
     border-radius: 8px;
     font-family: 'Syne', sans-serif;
-    font-weight: 600;
+    font-weight: 700;
     padding: 8px 20px;
     transition: all 0.2s;
 }
 
 .stButton > button:hover {
-    background: #6b85ff;
+    background: #e09500;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249,166,2,0.3);
 }
 
 .metric-card {
-    background: #111520;
-    border: 1px solid #1e2330;
+    background: #ffffff;
+    border: 1.5px solid #f0d88a;
     border-radius: 12px;
     padding: 20px 24px;
     margin: 4px 0;
+    box-shadow: 0 2px 8px rgba(249,166,2,0.08);
 }
 
 .metric-value {
     font-family: 'DM Mono', monospace;
     font-size: 2rem;
     font-weight: 500;
-    color: #4f6fff;
+    color: #c97f00;
     line-height: 1.1;
 }
 
@@ -93,7 +103,7 @@ section[data-testid="stSidebar"] {
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #6b7280;
+    color: #9a7d30;
     margin-top: 4px;
 }
 
@@ -103,8 +113,8 @@ section[data-testid="stSidebar"] {
     margin-top: 6px;
 }
 
-.delta-up { color: #34d399; }
-.delta-down { color: #f87171; }
+.delta-up   { color: #16a34a; }
+.delta-down { color: #dc2626; }
 
 .issue-badge {
     display: inline-block;
@@ -116,20 +126,21 @@ section[data-testid="stSidebar"] {
     text-transform: uppercase;
 }
 
-.badge-util { background: #1e3a5f; color: #60a5fa; }
-.badge-kpi  { background: #1e3a2a; color: #4ade80; }
-.badge-cost { background: #3a1e1e; color: #f87171; }
+.badge-util { background: #fef3c7; color: #92400e; }
+.badge-kpi  { background: #dcfce7; color: #15803d; }
+.badge-cost { background: #fee2e2; color: #b91c1c; }
 
 .ai-box {
-    background: linear-gradient(135deg, #111a35 0%, #0f1520 100%);
-    border: 1px solid #2a3a6a;
-    border-left: 3px solid #4f6fff;
+    background: linear-gradient(135deg, #fffbef 0%, #fff8e1 100%);
+    border: 1.5px solid #f0d07a;
+    border-left: 4px solid #F9A602;
     border-radius: 10px;
     padding: 20px 24px;
     font-size: 0.92rem;
     line-height: 1.7;
-    color: #c8d0e8;
+    color: #3a2e0a;
     margin-top: 8px;
+    box-shadow: 0 2px 10px rgba(249,166,2,0.07);
 }
 
 .section-header {
@@ -137,7 +148,7 @@ section[data-testid="stSidebar"] {
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: #4f6fff;
+    color: #c97f00;
     margin-bottom: 12px;
     margin-top: 24px;
     display: flex;
@@ -149,28 +160,41 @@ section[data-testid="stSidebar"] {
     content: '';
     flex: 1;
     height: 1px;
-    background: #1e2330;
+    background: #f0d88a;
 }
 
 div[data-testid="stDataFrame"] {
-    border: 1px solid #1e2330;
+    border: 1.5px solid #f0d88a;
     border-radius: 10px;
     overflow: hidden;
 }
 
 .stSlider > div > div {
-    color: #4f6fff;
+    color: #F9A602;
 }
 
 h1 {
     font-size: 1.6rem !important;
     font-weight: 800 !important;
     letter-spacing: -0.02em !important;
-    color: #e8eaf0 !important;
+    color: #1a1509 !important;
 }
 
 .stSpinner > div {
-    border-top-color: #4f6fff !important;
+    border-top-color: #F9A602 !important;
+}
+
+/* Selectbox styling */
+.stSelectbox > div > div {
+    background: #ffffff;
+    border: 1.5px solid #f0c842;
+    border-radius: 8px;
+}
+
+/* Warning/info boxes */
+.stWarning {
+    background: #fff8e1;
+    border-left: 4px solid #F9A602;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -181,7 +205,7 @@ h1 {
 col_title, col_status = st.columns([3, 1])
 with col_title:
     st.markdown("# 🧠 COO AI Analytics")
-    st.markdown('<p style="color:#6b7280;font-size:0.85rem;margin-top:-8px;">Workforce Intelligence · Powered by Claude</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#9a7d30;font-size:0.85rem;margin-top:-8px;">Workforce Intelligence · Powered by Claude</p>', unsafe_allow_html=True)
 
 # =========================
 # LOAD DATA
@@ -350,21 +374,21 @@ def apply_top_n(df, column, direction, n):
 CHART_THEME = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(family="DM Mono", color="#9ca3af", size=11),
+    font=dict(family="DM Mono", color="#6b5a1e", size=11),
     margin=dict(l=0, r=0, t=30, b=0),
-    colorway=["#4f6fff", "#34d399", "#f87171", "#fbbf24", "#a78bfa"],
+    colorway=["#F9A602", "#16a34a", "#dc2626", "#7c3aed", "#0ea5e9"],
 )
 
 def chart_distribution(df, column, title):
     fig = px.histogram(
         df, x=column, nbins=20,
         title=title,
-        color_discrete_sequence=["#4f6fff"]
+        color_discrete_sequence=["#F9A602"]
     )
     fig.update_layout(**CHART_THEME)
     fig.update_traces(marker_line_width=0, opacity=0.85)
-    fig.update_xaxes(showgrid=False, zeroline=False, color="#6b7280")
-    fig.update_yaxes(showgrid=True, gridcolor="#1e2330", zeroline=False, color="#6b7280")
+    fig.update_xaxes(showgrid=False, zeroline=False, color="#9a7d30")
+    fig.update_yaxes(showgrid=True, gridcolor="#f0d88a", zeroline=False, color="#9a7d30")
     return fig
 
 def chart_scatter(df, x, y, title, color=None):
@@ -373,23 +397,23 @@ def chart_scatter(df, x, y, title, color=None):
         color=color,
         trendline="ols",
         opacity=0.75,
-        color_discrete_sequence=["#4f6fff"]
+        color_discrete_sequence=["#F9A602"]
     )
     fig.update_layout(**CHART_THEME)
-    fig.update_xaxes(showgrid=True, gridcolor="#1e2330", color="#6b7280")
-    fig.update_yaxes(showgrid=True, gridcolor="#1e2330", color="#6b7280")
+    fig.update_xaxes(showgrid=True, gridcolor="#f0d88a", color="#9a7d30")
+    fig.update_yaxes(showgrid=True, gridcolor="#f0d88a", color="#9a7d30")
     return fig
 
 def chart_bar(df, x, y, title, color_col=None, horizontal=False):
     if horizontal:
         fig = px.bar(df, x=y, y=x, orientation="h", title=title,
-                     color=color_col, color_discrete_sequence=["#4f6fff", "#34d399", "#f87171"])
+                     color=color_col, color_discrete_sequence=["#F9A602", "#16a34a", "#dc2626"])
     else:
         fig = px.bar(df, x=x, y=y, title=title,
-                     color=color_col, color_discrete_sequence=["#4f6fff", "#34d399", "#f87171"])
+                     color=color_col, color_discrete_sequence=["#F9A602", "#16a34a", "#dc2626"])
     fig.update_layout(**CHART_THEME)
-    fig.update_xaxes(showgrid=False, color="#6b7280")
-    fig.update_yaxes(showgrid=True, gridcolor="#1e2330", color="#6b7280")
+    fig.update_xaxes(showgrid=False, color="#9a7d30")
+    fig.update_yaxes(showgrid=True, gridcolor="#f0d88a", color="#9a7d30")
     fig.update_traces(marker_line_width=0)
     return fig
 
@@ -399,7 +423,7 @@ def chart_heatmap(corr_df):
         x=corr_df.columns,
         y=corr_df.index,
         colorscale=[
-            [0.0, "#f87171"], [0.5, "#111520"], [1.0, "#4f6fff"]
+            [0.0, "#dc2626"], [0.5, "#fff8e1"], [1.0, "#F9A602"]
         ],
         zmid=0,
         text=corr_df.round(2).values,
@@ -413,11 +437,11 @@ def chart_outlier_box(df, column, title):
     fig = px.box(
         df, y=column, title=title,
         points="all",
-        color_discrete_sequence=["#4f6fff"]
+        color_discrete_sequence=["#F9A602"]
     )
     fig.update_layout(**CHART_THEME)
-    fig.update_xaxes(showgrid=False, color="#6b7280")
-    fig.update_yaxes(showgrid=True, gridcolor="#1e2330", color="#6b7280")
+    fig.update_xaxes(showgrid=False, color="#9a7d30")
+    fig.update_yaxes(showgrid=True, gridcolor="#f0d88a", color="#9a7d30")
     return fig
 
 # =========================
@@ -684,7 +708,7 @@ def render_issues():
             counts = issues["issue"].value_counts().reset_index()
             counts.columns = ["Issue", "Count"]
             fig = px.pie(counts, names="Issue", values="Count",
-                         color_discrete_sequence=["#4f6fff", "#34d399", "#f87171"],
+                         color_discrete_sequence=["#F9A602", "#16a34a", "#dc2626"],
                          hole=0.55)
             fig.update_layout(**CHART_THEME, showlegend=True)
             fig.update_traces(textfont_size=11)
