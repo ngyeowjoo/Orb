@@ -11,7 +11,7 @@ DATA_PATH = "data/"
 st.set_page_config(page_title="COO AI Analytics Bot", layout="wide")
 
 st.title("💼 COO AI Analytics Bot")
-:material/psychology_alt:
+st.page_link("your_page.py", label="AI Assistant", icon=":material/robot_2:")
 # =========================
 # LOAD DATA
 # =========================
