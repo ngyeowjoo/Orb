@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import re
+import requests
 
 # =========================
 # CONFIG
@@ -10,7 +11,6 @@ DATA_PATH = "data/"
 st.set_page_config(page_title="COO AI Analytics Bot", layout="wide")
 
 st.title("📊 COO AI Analytics Bot")
-st.write("Ask smart business questions (e.g. 'top performers', 'low utilisation below 0.5')")
 
 # =========================
 # LOAD DATA
@@ -20,11 +20,9 @@ def load_data():
     data = {}
     files = [
         "dim_employee.xlsx",
-        "dim_project.xlsx",
         "fact_payroll.xlsx",
         "fact_attendance.xlsx",
-        "fact_employee_kpi.xlsx",
-        "fact_project_financials.xlsx"
+        "fact_employee_kpi.xlsx"
     ]
 
     for file in files:
@@ -66,81 +64,119 @@ def calculate_cost():
     return df
 
 # =========================
+# BUILD DATASET
+# =========================
+def build_analysis_dataset():
+    util = calculate_utilisation()
+    kpi = calculate_kpi()
+    cost = calculate_cost()
+
+    df = util.merge(kpi, on="employee_id")
+    df = df.merge(cost, on="employee_id")
+
+    return df[["employee_id", "utilisation", "kpi", "total_cost"]]
+
+# =========================
+# CORRELATION
+# =========================
+def compute_correlation(df):
+    return df.corr(numeric_only=True)
+
+# =========================
+# AI EXPLANATION (OpenAI)
+# =========================
+def explain_with_ai(corr_df):
+    api_key = st.secrets.get("OPENAI_API_KEY", None)
+
+    if not api_key:
+        return "⚠️ No AI key found. Add OPENAI_API_KEY in Streamlit secrets."
+
+    prompt = f"""
+You are a COO analytics assistant.
+
+Explain the following correlation matrix in business terms.
+
+Focus on:
+- Key relationships
+- Risks
+- Opportunities
+- Actionable recommendations
+
+Correlation Matrix:
+{corr_df.to_string()}
+"""
+
+    response = requests.post(
+        "https://api.openai.com/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "gpt-4o-mini",
+            "messages": [
+                {"role": "system", "content": "You are a COO advisor."},
+                {"role": "user", "content": prompt}
+            ]
+        }
+    )
+
+    result = response.json()
+    return result["choices"][0]["message"]["content"]
+
+# =========================
 # NLP PARSER
 # =========================
 def parse_question(q):
     q = q.lower()
 
-    # metric
+    if "correlation" in q or "relationship" in q:
+        return "correlation"
+
     if "util" in q:
-        metric = "utilisation"
+        return "utilisation"
     elif "kpi" in q or "performance" in q:
-        metric = "kpi"
+        return "kpi"
     elif "cost" in q:
-        metric = "cost"
-    else:
-        metric = None
+        return "cost"
 
-    # direction
-    if any(x in q for x in ["low", "below", "under", "worst"]):
-        direction = "below"
-    elif any(x in q for x in ["high", "above", "over", "top", "best"]):
-        direction = "above"
-    else:
-        direction = "above"
-
-    # number
-    match = re.search(r"(\d*\.?\d+)", q)
-    value = float(match.group(1)) if match else None
-
-    # top/bottom N
-    top_n = None
-    match_n = re.search(r"(top|bottom)\s*(\d+)", q)
-    if match_n:
-        top_n = int(match_n.group(2))
-
-    return metric, direction, value, top_n
+    return None
 
 # =========================
-# FILTER ENGINE
+# HIGHLIGHT FUNCTION
 # =========================
-def get_metric_df(metric):
-    if metric == "utilisation":
-        return calculate_utilisation(), "utilisation"
-    elif metric == "kpi":
-        return calculate_kpi(), "kpi"
-    elif metric == "cost":
-        return calculate_cost(), "total_cost"
-    return pd.DataFrame(), None
+def highlight_issues(row):
+    color = ""
 
-def apply_condition(df, column, direction, value):
-    if value is None:
-        return df
+    if row["issue"] == "Low Utilisation":
+        color = "background-color: #ffcccc"
+    elif row["issue"] == "Low KPI":
+        color = "background-color: #fff3cd"
+    elif row["issue"] == "High Cost":
+        color = "background-color: #f8d7da"
 
-    if direction == "below":
-        return df[df[column] < value]
-    else:
-        return df[df[column] > value]
-
-def apply_top_n(df, column, direction, n):
-    if n is None:
-        return df
-
-    return df.sort_values(column, ascending=(direction == "below")).head(n)
+    return [color]*len(row)
 
 # =========================
-# INSIGHT ENGINE
+# TOP ISSUES
 # =========================
-def generate_insight(df, metric, direction):
-    if df.empty:
-        return "No significant findings."
+def get_top_issues():
+    util = calculate_utilisation()
+    util = util[util["utilisation"] < util_threshold]
 
-    avg = df.mean(numeric_only=True).mean()
+    kpi = calculate_kpi()
+    kpi = kpi[kpi["kpi"] < kpi_threshold]
 
-    if direction == "above":
-        return f"These are high {metric} cases. Indicates strong performance or potential cost concentration."
-    else:
-        return f"These are low {metric} cases. Indicates underperformance or inefficiency."
+    cost = calculate_cost()
+    cost = cost[cost["total_cost"] > cost_threshold]
+
+    issues = pd.concat([
+        util.assign(issue="Low Utilisation"),
+        kpi.assign(issue="Low KPI"),
+        cost.assign(issue="High Cost")
+    ])
+
+    return issues.head(10)
 
 # =========================
 # UI INPUT
@@ -148,60 +184,28 @@ def generate_insight(df, metric, direction):
 question = st.text_input("💬 Ask a question")
 
 if question:
-    metric, direction, value, top_n = parse_question(question)
+    intent = parse_question(question)
 
-    if metric is None:
-        st.warning("Try mentioning utilisation, KPI, or cost.")
+    if intent == "correlation":
+        df = build_analysis_dataset()
+        corr = compute_correlation(df)
+
+        st.subheader("📊 Correlation Matrix")
+        st.dataframe(corr)
+
+        st.subheader("🧠 AI Insight")
+        st.write(explain_with_ai(corr))
+
     else:
-        df, column = get_metric_df(metric)
-
-        # fallback to slider
-        if value is None:
-            if metric == "utilisation":
-                value = util_threshold
-            elif metric == "kpi":
-                value = kpi_threshold
-            elif metric == "cost":
-                value = cost_threshold
-
-        result = apply_condition(df, column, direction, value)
-        result = apply_top_n(result, column, direction, top_n)
-
-        st.subheader("📌 Results")
-        st.dataframe(result)
-
-        st.subheader("🧠 Insight")
-        st.write(generate_insight(result, metric, direction))
+        st.info("Try asking about correlation, utilisation, KPI or cost.")
 
 # =========================
-# CHARTS
-# =========================
-st.subheader("📊 Utilisation Overview")
-util_df = calculate_utilisation()
-st.bar_chart(util_df.set_index("employee_id")["utilisation"])
-
-st.subheader("📊 KPI Overview")
-kpi_df = calculate_kpi()
-st.bar_chart(kpi_df.set_index("employee_id")["kpi"])
-
-# =========================
-# TOP ISSUES
+# TOP ISSUES DISPLAY
 # =========================
 st.subheader("🚨 Top Issues")
 
-low_util = calculate_utilisation()
-low_util = low_util[low_util["utilisation"] < util_threshold]
+issues_df = get_top_issues()
 
-low_kpi = calculate_kpi()
-low_kpi = low_kpi[low_kpi["kpi"] < kpi_threshold]
-
-high_cost = calculate_cost()
-high_cost = high_cost[high_cost["total_cost"] > cost_threshold]
-
-issues = pd.concat([
-    low_util.assign(issue="Low Utilisation"),
-    low_kpi.assign(issue="Low KPI"),
-    high_cost.assign(issue="High Cost")
-])
-
-st.dataframe(issues.head(10))
+st.dataframe(
+    issues_df.style.apply(highlight_issues, axis=1)
+)
