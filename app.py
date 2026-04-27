@@ -74,6 +74,9 @@ def get_low_utilisation_employees(data):
     df = calculate_utilisation(data["fact_attendance.xlsx"])
     return df[df["utilisation"] < 0.6]
 
+def get_high_utilisation_employees(data):
+    df = calculate_utilisation(data["fact_attendance.xlsx"])
+    return df[df["utilisation"] > 0.8]
 
 def get_high_cost_low_performance(data):
     payroll = calculate_employee_cost(data["fact_payroll.xlsx"])
@@ -97,7 +100,7 @@ def generate_explanation(question, df):
     if "loss" in question:
         return "These projects are loss-making due to low revenue and/or high penalties. Review cost structure and performance KPIs."
 
-    if "utilisation" in question:
+    if "low utilisation" in question:
         return "These employees have low utilisation. Consider workload redistribution or role alignment."
 
     if "cost" in question or "performance" in question:
@@ -129,8 +132,11 @@ if question:
     elif "profit" in question_lower:
         result = get_profit_making_projects(data)
 
-    elif "utilisation" in question_lower:
+    elif "low utilisation" in question_lower:
         result = get_low_utilisation_employees(data)
+
+    elif "high utilisation" in question_lower:
+        result = get_high_utilisation_employees(data)
 
     elif "cost" in question_lower or "performance" in question_lower:
         result = get_high_cost_low_performance(data)
