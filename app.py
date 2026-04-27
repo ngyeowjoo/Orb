@@ -10,8 +10,8 @@ import requests
 DATA_PATH = "data/"
 st.set_page_config(page_title="COO AI Analytics Bot", layout="wide")
 
-st.title("📊 COO AI Analytics Bot")
-
+st.title("💼 COO AI Analytics Bot")
+:material/psychology_alt:
 # =========================
 # LOAD DATA
 # =========================
