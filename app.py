@@ -10,8 +10,8 @@ import requests
 DATA_PATH = "data/"
 st.set_page_config(page_title="COO AI Analytics Bot", layout="wide")
 
-st.title("💼 COO AI Analytics Bot")
-st.page_link("your_page.py", label="AI Assistant", icon=":material/robot_2:")
+st.title("🤖COO AI Analytics Bot")
+
 # =========================
 # LOAD DATA
 # =========================
@@ -214,7 +214,7 @@ if question:
         df = build_analysis_dataset()
         corr = compute_correlation(df)
 
-        st.subheader("📊 Correlation Matrix")
+        st.subheader("↗️Correlation Matrix")
         st.dataframe(corr)
 
         st.subheader("🧠 AI Insight")
