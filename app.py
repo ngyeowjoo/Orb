@@ -140,7 +140,7 @@ def emp_summary():
           .merge(kpi, on="employee_id", how="left")
           .merge(lv,  on="employee_id", how="left")
           .merge(rev, on="employee_id", how="left"))
-    df["roi"] = (df["net_contribution"] / df["total_emp_cost"].replace(0, np.nan)).round(3)
+    df["roi"] = (df["net_contribution"] / (df["avg_total_cost"] * 12).replace(0, np.nan)).round(3)
     return df
 
 @st.cache_data
