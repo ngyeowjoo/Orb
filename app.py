@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # ═══════════════════════════════════════════════
 # CONFIG
 # ═══════════════════════════════════════════════
-DATA_PATH = "data/"
+DATA_PATH = "data2/"
 
 st.set_page_config(
     page_title="COO AI Analytics",
