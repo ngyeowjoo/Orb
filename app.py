@@ -33,9 +33,9 @@ def load_data():
             data[file] = pd.read_excel(path)
     return data
 
-data = load_data()
-st.write("Payroll columns:", data["fact_payroll.xlsx"].columns)
-st.write("KPI columns:", data["fact_employee_kpi.xlsx"].columns)
+#data = load_data()
+#st.write("Payroll columns:", data["fact_payroll.xlsx"].columns)
+#st.write("KPI columns:", data["fact_employee_kpi.xlsx"].columns)
 
 # =========================
 # SEMANTIC LAYER (METRICS)
@@ -66,6 +66,9 @@ def get_loss_making_projects(data):
     df = calculate_project_profit(data["fact_project_financials.xlsx"])
     return df[df["net_profit"] < 0]
 
+def get_profit_making_projects(data):
+    df = calculate_project_profit(data["fact_project_financials.xlsx"])
+    return df[df["net_profit"] > 0]
 
 def get_low_utilisation_employees(data):
     df = calculate_utilisation(data["fact_attendance.xlsx"])
@@ -87,6 +90,9 @@ def get_high_cost_low_performance(data):
 def generate_explanation(question, df):
     if df.empty:
         return "No significant issues found based on current criteria."
+
+    if "profit" in question:
+        return "These projects are profit-making."
 
     if "loss" in question:
         return "These projects are loss-making due to low revenue and/or high penalties. Review cost structure and performance KPIs."
@@ -120,6 +126,9 @@ if question:
     if "loss" in question_lower:
         result = get_loss_making_projects(data)
 
+    elseif "profit" in question_lower:
+        result = get_profit_making_projects(data)
+
     elif "utilisation" in question_lower:
         result = get_low_utilisation_employees(data)
 
@@ -127,7 +136,7 @@ if question:
         result = get_high_cost_low_performance(data)
 
     else:
-        st.warning("Question not recognized yet. Try keywords: loss, utilisation, cost, performance.")
+        st.warning("Question not recognized yet. Try keywords: loss, profit, utilisation, cost, performance.")
         result = pd.DataFrame()
 
     # Output
@@ -143,7 +152,7 @@ if question:
 
 # Sidebar examples
 st.sidebar.title("Example Questions")
-st.sidebar.write("- Which projects are loss-making?")
+st.sidebar.write("- Which projects are loss/profit making?")
 st.sidebar.write("- Which employees have low utilisation?")
 st.sidebar.write("- Who are high cost but low performance employees?")
 
