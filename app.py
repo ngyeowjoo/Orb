@@ -10,7 +10,7 @@ import requests
 DATA_PATH = "data/"
 st.set_page_config(page_title="COO AI Analytics Bot", layout="wide")
 
-st.title("🤖COO AI Analytics Bot")
+st.title("🤖 COO AI Analytics Bot")
 
 # =========================
 # LOAD DATA
@@ -236,7 +236,7 @@ if question:
         result = apply_condition(df, column, direction, value)
         result = apply_top_n(result, column, direction, top_n)
 
-        st.subheader("📌 Results")
+        st.subheader("🤠Results")
         st.dataframe(result)
 
         st.subheader("🧠 Insight")
