@@ -1,4 +1,14 @@
 import streamlit as st
+    import streamlit as st
+hide_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_style, unsafe_allow_html=True)
+```
 import pandas as pd
 import numpy as np
 import os, re, requests
