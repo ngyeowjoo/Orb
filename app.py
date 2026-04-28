@@ -271,7 +271,7 @@ else:
     ai_model_label = "Claude Sonnet"
 st.sidebar.caption(f"Model: {ai_model_label}")
 ai_depth = st.sidebar.selectbox("Response depth", ["Concise","Detailed","Strategic"])
-auto_ai  = st.sidebar.toggle("Auto AI insight", value=True)
+
 
 # ═══════════════════════════════════════════════
 # HELPERS
@@ -289,7 +289,18 @@ def sec(label):
     st.markdown(f'<div class="section-header">{label}</div>', unsafe_allow_html=True)
 
 def ai_box(text):
+    import re as _re
+    # Convert **word**: to <strong>word</strong>: so markdown bold renders in HTML
+    text = _re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+    # Convert newlines to <br> for HTML rendering
+    text = text.replace("\n", "<br>")
     st.markdown(f'<div class="ai-box">{text}</div>', unsafe_allow_html=True)
+
+def ai_button(context, data_str, question="", key=None):
+    """Renders a button; only calls AI and renders insight when clicked."""
+    if st.button("🧠 Get AI Insight", key=key, use_container_width=False):
+        with st.spinner("Generating insight..."):
+            ai_box(insight(context, data_str, question))
 
 def call_ai(system: str, user: str) -> str:
     depth = {"Concise":"Be concise — max 4 bullet points total.",
@@ -405,8 +416,7 @@ with tabs[0]:
                 zmid=0, text=corr.round(2).values, texttemplate="%{text}"))
             fig.update_layout(**CT, title="Workforce Correlation")
             st.plotly_chart(fig, use_container_width=True)
-            if auto_ai:
-                with st.spinner(): ai_box(insight("workforce correlation", corr.round(3).to_string()))
+            ai_button("workforce correlation", corr.round(3).to_string(), key="btn_corr_ask")
 
         elif any(x in ql for x in ["penalty","penalties"]):
             sec("⚠ Project Penalties")
@@ -433,8 +443,7 @@ with tabs[0]:
             fig.update_layout(**CT); fmt_axes(fig)
             st.plotly_chart(fig, use_container_width=True)
             st.dataframe(df[["employee_id","name","role","avg_total_cost","net_contribution","roi"]].round(2), use_container_width=True)
-            if auto_ai:
-                with st.spinner(): ai_box(insight("employee ROI", df[["employee_id","avg_total_cost","net_contribution","roi"]].head(10).to_string(), q))
+            ai_button("employee ROI", df[["employee_id","avg_total_cost","net_contribution","roi"]].head(10).to_string(), q, key="employee_ROI")
 
         elif any(x in ql for x in ["revenue per hour","rev per hr"]):
             sec("💹 Revenue per Hour")
@@ -458,8 +467,7 @@ with tabs[0]:
                 fig = px.histogram(es_f, x=col, nbins=20, color_discrete_sequence=[C_AMBER])
                 fig.update_layout(**CT); fmt_axes(fig)
                 st.plotly_chart(fig, use_container_width=True)
-            if auto_ai:
-                with st.spinner(): ai_box(insight(f"{label} analysis", df[["employee_id",col]].round(3).to_string(), q))
+            ai_button(f"{label} analysis", df[["employee_id",col]].round(3).to_string(), q, key="ai_ask")
 
 # ─── TAB 1: REVENUE & COST ────────────────────
 with tabs[1]:
@@ -519,9 +527,9 @@ with tabs[1]:
                      title="Incentive Ratio vs KPI (bubble = penalty)")
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    if auto_ai:
-        sec("🧠 Claude Insight")
-        with st.spinner():
+    sec("🧠 Claude Insight")
+    if st.button("🧠 Get AI Insight", key="btn_rev", use_container_width=False):
+        with st.spinner("Generating insight..."):
             ai_box(insight("revenue and cost", ps[["project_name","total_revenue","total_cost","total_penalty","margin","avg_kpi"]].round(2).to_string(),
                            "Highest cost lowest contribution? Overspending on incentives?"))
 
@@ -570,9 +578,9 @@ with tabs[2]:
     fig.add_hline(y=util_thr, line_dash="dash", line_color=C_BAD, annotation_text="Threshold")
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    if auto_ai:
-        sec("🧠 Claude Insight")
-        with st.spinner():
+    sec("🧠 Claude Insight")
+    if st.button("🧠 Get AI Insight", key="btn_prod", use_container_width=False):
+        with st.spinner("Generating insight..."):
             ai_box(insight("productivity", es_f[["employee_id","avg_util","avg_kpi","avg_rev_per_hr","avg_overtime"]].describe().round(3).to_string(),
                            "Which teams work overtime without more output? Who are top performers?"))
 
@@ -619,9 +627,9 @@ with tabs[3]:
     fig.update_traces(textposition="top center", textfont_size=9)
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    if auto_ai:
-        sec("🧠 Claude Insight")
-        with st.spinner():
+    sec("🧠 Claude Insight")
+    if st.button("🧠 Get AI Insight", key="btn_red", use_container_width=False):
+        with st.spinner("Generating insight..."):
             ai_box(insight("redundancy", neg[["employee_id","role","avg_total_cost","net_contribution"]].head(10).round(2).to_string(),
                            "Where can we reduce headcount? Which roles have overlapping output?"))
 
@@ -674,9 +682,9 @@ with tabs[4]:
                  color="avg_kpi", color_continuous_scale=["#fff8e1", C_AMBER], title="Avg KPI by Tenure")
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    if auto_ai:
-        sec("🧠 Claude Insight")
-        with st.spinner():
+    sec("🧠 Claude Insight")
+    if st.button("🧠 Get AI Insight", key="btn_perf", use_container_width=False):
+        with st.spinner("Generating insight..."):
             ai_box(insight("performance", mgr_p.round(3).to_string(),
                            "Who are high-rated but low-performing? Which managers produce high-performing teams?"))
 
@@ -726,9 +734,9 @@ with tabs[5]:
                      hover_data=["name","role"], title="Incentive Spend vs KPI")
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    if auto_ai:
-        sec("🧠 Claude Insight")
-        with st.spinner():
+    sec("🧠 Claude Insight")
+    if st.button("🧠 Get AI Insight", key="btn_strat", use_container_width=False):
+        with st.spinner("Generating insight..."):
             ai_box(insight("strategic ROI", es_f[["employee_id","roi","net_contribution","avg_incentive","avg_kpi"]].describe().round(3).to_string(),
                            "Net contribution per employee? Cost of attrition? Which incentives drive performance?"))
 
@@ -768,9 +776,9 @@ with tabs[6]:
     st.markdown("### Project Summary Table")
     st.dataframe(ps[["project_name","status","total_revenue","total_cost","total_penalty","margin","avg_kpi","avg_util","emp_count"]].round(2), use_container_width=True)
 
-    if auto_ai:
-        sec("🧠 Claude Insight")
-        with st.spinner():
+    sec("🧠 Claude Insight")
+    if st.button("🧠 Get AI Insight", key="btn_proj", use_container_width=False):
+        with st.spinner("Generating insight..."):
             ai_box(insight("project portfolio", ps[["project_name","total_revenue","total_penalty","margin","avg_kpi","status"]].round(2).to_string(),
                            "Which projects are at risk? Where are penalties coming from?"))
 
@@ -818,9 +826,9 @@ with tabs[7]:
 
     st.dataframe(lv_emp.sort_values("absenteeism", ascending=False), use_container_width=True)
 
-    if auto_ai:
-        sec("🧠 Claude Insight")
-        with st.spinner():
+    sec("🧠 Claude Insight")
+    if st.button("🧠 Get AI Insight", key="btn_leave", use_container_width=False):
+        with st.spinner("Generating insight..."):
             ai_box(insight("leave patterns", lv_emp.describe().round(2).to_string(),
                            "What are the absenteeism risks? Is sick/unplanned leave concentrated in specific teams?"))
 
