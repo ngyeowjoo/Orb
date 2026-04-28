@@ -879,20 +879,30 @@ with tabs[0]:
         "Absentees in Finance",
         "High cost employees in HR",
     ]
+    # ── Session state init ───────────────────
+    if "last_sel_rag"  not in st.session_state: st.session_state["last_sel_rag"]  = ""
+    if "rag_input"     not in st.session_state: st.session_state["rag_input"]     = ""
+    if "ai_ask_input"  not in st.session_state: st.session_state["ai_ask_input"]  = ""
+
+    # ── Dropdown ─────────────────────────────
     sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES, label_visibility="collapsed")
 
-    # Clear custom input when dropdown selection changes
-    if "last_sel_rag" not in st.session_state:
+    # When dropdown changes to a real value → clear custom text box AND AI box
+    if sel_rag and sel_rag != st.session_state["last_sel_rag"]:
         st.session_state["last_sel_rag"] = sel_rag
-    if sel_rag != st.session_state["last_sel_rag"]:
-        st.session_state["last_sel_rag"] = sel_rag
-        st.session_state["rag_input"] = ""   # wipe custom text box
+        st.session_state["rag_input"]    = ""   # clear custom query
 
+    # ── Custom text box ───────────────────────
     rag_q = st.text_input("Or type a custom query:", value="",
                            placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
                            key="rag_input")
 
-    # Typed input takes priority; dropdown fires when text box is empty
+    # When user types here → reset dropdown to blank and clear AI box
+    if rag_q.strip() and rag_q.strip() != st.session_state.get("last_rag_q", ""):
+        st.session_state["last_rag_q"]   = rag_q.strip()
+        st.session_state["last_sel_rag"] = ""   # dropdown will re-render at "" next cycle
+
+    # Typed takes priority over dropdown
     active_q = rag_q.strip() if rag_q.strip() else sel_rag
     if active_q:
         found = parse_and_render(active_q, key_prefix="rag")
@@ -907,6 +917,13 @@ with tabs[0]:
     ai_q = st.text_input("Ask in plain language:",
                           placeholder="e.g. 'Who are the top 10% ROI employees?' or 'Which managers consistently underdeliver?'",
                           key="ai_ask_input")
+
+    # When user types in AI box → clear RAG custom box and reset dropdown
+    if ai_q.strip() and ai_q.strip() != st.session_state.get("last_ai_q", ""):
+        st.session_state["last_ai_q"]    = ai_q.strip()
+        st.session_state["rag_input"]    = ""   # clear custom query box
+        st.session_state["last_sel_rag"] = ""   # will cause dropdown to show blank next cycle
+
     if ai_q:
         with st.spinner("Parsing intent..."):
             parsed = ai_parse_intent(ai_q)
@@ -1293,16 +1310,44 @@ with tabs[8]:
     neg_cont_df  = es_all[es_all["net_contribution"]< 0       ].assign(issue="Neg. Contribution")
 
     issues = pd.concat([low_util_df, low_kpi_df, high_cost_df, neg_cont_df])
+    cols_show = ["employee_id","name","department","issue","avg_util","avg_kpi","avg_total_cost","net_contribution"]
 
-    c1, c2 = st.columns([2,1])
+    # Summary counts
+    counts = issues["issue"].value_counts().reset_index(); counts.columns = ["Issue","Count"]
+    c1, c2, c3, c4 = st.columns(4)
+    for col_m, (_, row) in zip([c1,c2,c3,c4], counts.iterrows()):
+        col_m.metric(row["Issue"], f"{row['Count']} employees")
+
+    # Pie chart
+    c1, c2 = st.columns([1,1])
     with c1:
-        st.dataframe(issues[["employee_id","name","department","issue","avg_util","avg_kpi","avg_total_cost","net_contribution"]].round(3).head(25), use_container_width=True)
-    with c2:
-        counts = issues["issue"].value_counts().reset_index(); counts.columns = ["Issue","Count"]
-        # orange-red for issues — no green in issue pie
         fig = go.Figure(go.Pie(labels=counts["Issue"], values=counts["Count"], hole=0.55,
                                marker_colors=[C_AMBER, C_WARN, C_BAD, "#7c3aed"]))
-        fig.update_layout(**CT, title="Issues by Type"); st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(**CT, title="Issues by Type")
+        st.plotly_chart(fig, use_container_width=True)
+    with c2:
+        fig2 = px.bar(counts, x="Issue", y="Count",
+                      color="Issue", color_discrete_sequence=[C_AMBER, C_WARN, C_BAD, "#7c3aed"],
+                      title="Issue Counts")
+        fig2.update_layout(**CT); fmt_axes(fig2)
+        st.plotly_chart(fig2, use_container_width=True)
+
+    # Per-issue expandable tables — fully untruncated, sorted by worst first
+    issue_order = [
+        ("Low KPI",           low_kpi_df,   "avg_kpi",          True),
+        ("Low Utilisation",   low_util_df,  "avg_util",         True),
+        ("High Cost",         high_cost_df, "avg_total_cost",   False),
+        ("Neg. Contribution", neg_cont_df,  "net_contribution", True),
+    ]
+    for label, df, sort_col, asc in issue_order:
+        if len(df) == 0:
+            continue
+        icon = "🔴" if label == "Neg. Contribution" else "🟠"
+        with st.expander(f"{icon} {label} — {len(df)} employees", expanded=True):
+            st.dataframe(
+                df[cols_show].sort_values(sort_col, ascending=asc).round(3),
+                use_container_width=True
+            )
 
     sec("🏗 Project Flags")
     ps = proj_summary()
