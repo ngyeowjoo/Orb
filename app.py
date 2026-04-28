@@ -820,11 +820,13 @@ with tabs[0]:
         "Which projects have penalties?",
     ]
     sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES, label_visibility="collapsed")
-    rag_q   = st.text_input("Or type a structured query:", value=sel_rag,
+    rag_q   = st.text_input("Or type a custom query:", value="",
                              placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
                              key="rag_input")
-    if rag_q:
-        found = parse_and_render(rag_q, key_prefix="rag")
+    # Use typed input if present, otherwise use dropdown selection
+    active_q = rag_q.strip() if rag_q.strip() else sel_rag
+    if active_q:
+        found = parse_and_render(active_q, key_prefix="rag")
         if not found:
             st.warning("No match found. Try rephrasing or use **Ask Anything (AI)** below for complex questions.")
 
