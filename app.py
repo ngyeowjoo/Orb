@@ -14,7 +14,7 @@ st.set_page_config(
     page_title="COO AI Analytics",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={"About": "COO AI Analytics — Powered by JoAI"}
+    menu_items={"About": "COO AI Analytics — Powered by Claude"}
 )
 
 # ═══════════════════════════════════════════════
@@ -23,44 +23,117 @@ st.set_page_config(
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
-html, body, [class*="css"] { font-family: 'Syne', sans-serif; }
-.stApp { background: #fdfaf4; color: #1a1509; }
-section[data-testid="stSidebar"] { background: #fff8e8; border-right: 1px solid #f0d88a; }
-section[data-testid="stSidebar"] * { color: #3a2e0a !important; }
+
+/* Base */
+html, body { font-family: 'Syne', sans-serif !important; }
+[class*="css"] { font-family: 'Syne', sans-serif; }
+.stApp { background: #fdfaf4 !important; color: #1a1509 !important; }
+
+/* Sidebar — targeted selectors, no wildcard * */
+section[data-testid="stSidebar"] { background: #fff8e8 !important; border-right: 1px solid #f0d88a; }
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] div { color: #3a2e0a !important; }
+
+/* Input */
 .stTextInput > div > div > input {
-    background: #fff; border: 1.5px solid #f0c842; border-radius: 8px;
-    color: #1a1509; font-family:'DM Mono',monospace; font-size:0.9rem; padding:12px 16px;
+    background: #fff !important; border: 1.5px solid #f0c842 !important; border-radius: 8px !important;
+    color: #1a1509 !important; font-family:'DM Mono',monospace !important; font-size:0.9rem; padding:12px 16px;
 }
-.stTextInput > div > div > input:focus { border-color: #F9A602; box-shadow: 0 0 0 3px rgba(249,166,2,.18); }
-.stTextInput > div > div > input::placeholder { color: #b89040; }
+.stTextInput > div > div > input:focus { border-color: #F9A602 !important; box-shadow: 0 0 0 3px rgba(249,166,2,.18) !important; }
+.stTextInput > div > div > input::placeholder { color: #b89040 !important; }
+
+/* Button */
 .stButton > button {
-    background: #F9A602; color: #1a1509; border: none; border-radius: 8px;
-    font-family:'Syne',sans-serif; font-weight:700; padding:8px 20px; transition:all .2s;
+    background: #F9A602 !important; color: #1a1509 !important; border: none !important; border-radius: 8px !important;
+    font-family:'Syne',sans-serif !important; font-weight:700 !important; padding:8px 20px; transition:all .2s;
 }
-.stButton > button:hover { background: #e09500; transform:translateY(-1px); box-shadow:0 4px 12px rgba(249,166,2,.3); }
+.stButton > button:hover { background: #e09500 !important; box-shadow:0 4px 12px rgba(249,166,2,.3); }
+
+/* Metric cards */
 .metric-card {
     background: #fff; border: 1.5px solid #f0d88a; border-radius: 12px;
-    padding: 18px 22px; margin: 4px 0; box-shadow: 0 2px 8px rgba(249,166,2,.08);
+    padding: 18px 22px; margin: 4px 0; box-shadow: 0 2px 8px rgba(249,166,2,.15);
 }
 .metric-value { font-family:'DM Mono',monospace; font-size:1.8rem; font-weight:500; color:#c97f00; line-height:1.1; }
-.metric-label { font-size:0.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#9a7d30; margin-top:4px; }
+.metric-label { font-size:0.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#6b5010; margin-top:4px; }
+
+/* AI box — solid bg, no transparency issues on mobile */
 .ai-box {
-    background: linear-gradient(135deg,#fffbef 0%,#fff8e1 100%);
+    background: #fffbef;
     border: 1.5px solid #f0d07a; border-left: 4px solid #F9A602;
     border-radius: 10px; padding: 20px 24px;
-    font-size: 0.92rem; line-height: 1.75; color: #3a2e0a;
-    margin-top: 8px; box-shadow: 0 2px 10px rgba(249,166,2,.07);
+    font-size: 0.92rem; line-height: 1.75; color: #3a2e0a !important;
+    margin-top: 8px;
 }
+
+/* Section header */
 .section-header {
     font-size:0.7rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
-    color:#c97f00; margin-bottom:12px; margin-top:24px; display:flex; align-items:center; gap:8px;
+    color:#c97f00 !important; margin-bottom:12px; margin-top:24px; display:flex; align-items:center; gap:8px;
 }
 .section-header::after { content:''; flex:1; height:1px; background:#f0d88a; }
+
+/* Misc */
 div[data-testid="stDataFrame"] { border:1.5px solid #f0d88a; border-radius:10px; overflow:hidden; }
-h1 { font-size:1.6rem!important; font-weight:800!important; letter-spacing:-.02em!important; color:#1a1509!important; }
-h3 { color:#5a4510!important; font-size:1rem!important; margin-top:20px!important; }
-.stSpinner > div { border-top-color:#F9A602!important; }
-.stSelectbox > div > div { background:#fff; border:1.5px solid #f0c842; border-radius:8px; }
+h1 { font-size:1.6rem !important; font-weight:800 !important; letter-spacing:-.02em !important; color:#1a1509 !important; }
+h2 { color:#3a2e0a !important; }
+h3 { color:#5a4510 !important; font-size:1rem !important; margin-top:20px !important; }
+p  { color:#1a1509 !important; }
+.stSpinner > div { border-top-color:#F9A602 !important; }
+.stSelectbox > div > div { background:#fff !important; border:1.5px solid #f0c842 !important; border-radius:8px !important; }
+
+/* ══ MOBILE (≤ 768px) ══ */
+@media (max-width: 768px) {
+
+    html, body { font-size: 14px !important; }
+    h1 { font-size: 1.25rem !important; }
+    h3 { font-size: 0.9rem !important; }
+
+    /* Metric cards — 2 per row */
+    .metric-value { font-size: 1.3rem !important; }
+    .metric-label { font-size: 0.65rem !important; letter-spacing: 0.05em !important; }
+    .metric-card  { padding: 12px 14px !important; }
+
+    /* AI box — force visible text */
+    .ai-box {
+        background: #fffbef !important;
+        color: #1a1509 !important;
+        font-size: 0.85rem !important;
+        padding: 14px 16px !important;
+    }
+
+    /* Section header */
+    .section-header { font-size: 0.62rem !important; letter-spacing: 0.08em !important; }
+
+    /* Input */
+    .stTextInput > div > div > input { font-size: 0.85rem !important; padding: 10px 12px !important; }
+
+    /* Sidebar text */
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] div { color: #3a2e0a !important; font-size: 0.85rem !important; }
+
+    /* Charts — allow horizontal scroll */
+    .js-plotly-plot { overflow-x: auto !important; }
+
+    /* Tabs — horizontal scroll instead of wrapping */
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-size: 0.75rem !important;
+        padding: 6px 10px !important;
+        white-space: nowrap !important;
+    }
+
+    /* Dataframe */
+    div[data-testid="stDataFrame"] { font-size: 0.78rem !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -185,7 +258,7 @@ sel_proj  = st.sidebar.selectbox("Project", all_projs)
 all_depts = ["All"] + sorted(D["dim_employee"]["department"].dropna().unique().tolist())
 sel_dept  = st.sidebar.selectbox("Department", all_depts)
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🤖 JoAI")
+st.sidebar.markdown("### 🤖 AI")
 ai_depth = st.sidebar.selectbox("Response depth", ["Concise","Detailed","Strategic"])
 auto_ai  = st.sidebar.toggle("Auto AI insight", value=True)
 
@@ -208,9 +281,9 @@ def ai_box(text):
     st.markdown(f'<div class="ai-box">{text}</div>', unsafe_allow_html=True)
 
 def call_claude(system: str, user: str) -> str:
-    key = st.secrets.get("JoAI_API_KEY", None)
+    key = st.secrets.get("ANTHROPIC_API_KEY", None)
     if not key:
-        return "⚠ Add `JoAI_API_KEY` to Streamlit secrets to enable AI insights."
+        return "⚠ Add `ANTHROPIC_API_KEY` to Streamlit secrets to enable AI insights."
     depth = {"Concise":"Be concise — max 4 bullet points total.",
              "Detailed":"Give thorough analysis referencing specific numbers.",
              "Strategic":"Focus on board-level strategic implications and risks."}[ai_depth]
@@ -235,24 +308,33 @@ def insight(context, data_str, question=""):
 # HEADER + KPI CARDS
 # ═══════════════════════════════════════════════
 st.markdown("# 🧠 COO AI Analytics")
-st.markdown('<p style="color:#9a7d30;font-size:0.85rem;margin-top:-8px;">Workforce & Project Intelligence · Powered by JoAI</p>', unsafe_allow_html=True)
+st.markdown('<p style="color:#9a7d30;font-size:0.85rem;margin-top:-8px;">Workforce & Project Intelligence · Powered by Claude</p>', unsafe_allow_html=True)
 
 try:
     es_h = filter_emp(emp_summary())
     ps_h = proj_summary()
-    cols = st.columns(7)
-    def card(col, val, label, good):
+
+    def card_html(val, label, good):
         color = "#16a34a" if good else "#dc2626"
-        col.markdown(f"""<div class="metric-card">
+        return f'''<div class="metric-card">
             <div class="metric-value" style="color:{color}">{val}</div>
-            <div class="metric-label">{label}</div></div>""", unsafe_allow_html=True)
-    card(cols[0], f"{es_h['avg_util'].mean():.0%}",          "Avg Utilisation",  es_h["avg_util"].mean() >= util_thr)
-    card(cols[1], f"{es_h['avg_kpi'].mean():.0%}",           "Avg KPI",          es_h["avg_kpi"].mean()  >= kpi_thr)
-    card(cols[2], f"${es_h['avg_total_cost'].mean():,.0f}",  "Avg Mo. Cost",     es_h["avg_total_cost"].mean() <= cost_thr)
-    card(cols[3], f"${ps_h['total_revenue'].sum()/1e6:.1f}M","Total Revenue",    True)
-    card(cols[4], f"${ps_h['total_penalty'].sum():,.0f}",    "Total Penalties",  ps_h["total_penalty"].sum() == 0)
-    card(cols[5], f"{(es_h['avg_util'] < util_thr).sum()}",  "Low Util Flags",   (es_h["avg_util"] < util_thr).sum() == 0)
-    card(cols[6], f"{(es_h['avg_kpi']  < kpi_thr).sum()}",   "Low KPI Flags",    (es_h["avg_kpi"]  < kpi_thr).sum() == 0)
+            <div class="metric-label">{label}</div>
+        </div>'''
+
+    cards = [
+        card_html(f"{es_h['avg_util'].mean():.0%}",           "Avg Utilisation", es_h["avg_util"].mean() >= util_thr),
+        card_html(f"{es_h['avg_kpi'].mean():.0%}",            "Avg KPI",         es_h["avg_kpi"].mean()  >= kpi_thr),
+        card_html(f"${es_h['avg_total_cost'].mean():,.0f}",   "Avg Mo. Cost",    es_h["avg_total_cost"].mean() <= cost_thr),
+        card_html(f"${ps_h['total_revenue'].sum()/1e6:.1f}M", "Total Revenue",   True),
+        card_html(f"${ps_h['total_penalty'].sum():,.0f}",     "Total Penalties", ps_h["total_penalty"].sum() == 0),
+        card_html(f"{(es_h['avg_util'] < util_thr).sum()}",   "Low Util Flags",  (es_h["avg_util"] < util_thr).sum() == 0),
+        card_html(f"{(es_h['avg_kpi']  < kpi_thr).sum()}",    "Low KPI Flags",   (es_h["avg_kpi"]  < kpi_thr).sum() == 0),
+    ]
+    # Responsive grid: 4 cols on mobile via CSS, 7 on desktop
+    st.markdown(
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px;">' + "".join(cards) + '</div>',
+        unsafe_allow_html=True
+    )
 except Exception as e:
     st.warning(f"Cards unavailable: {e}")
 
@@ -400,7 +482,7 @@ with tabs[1]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("revenue and cost", ps[["project_name","total_revenue","total_cost","total_penalty","margin","avg_kpi"]].round(2).to_string(),
                            "Highest cost lowest contribution? Overspending on incentives?"))
@@ -451,7 +533,7 @@ with tabs[2]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("productivity", es_f[["employee_id","avg_util","avg_kpi","avg_rev_per_hr","avg_overtime"]].describe().round(3).to_string(),
                            "Which teams work overtime without more output? Who are top performers?"))
@@ -500,7 +582,7 @@ with tabs[3]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("redundancy", neg[["employee_id","role","avg_total_cost","net_contribution"]].head(10).round(2).to_string(),
                            "Where can we reduce headcount? Which roles have overlapping output?"))
@@ -555,7 +637,7 @@ with tabs[4]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("performance", mgr_p.round(3).to_string(),
                            "Who are high-rated but low-performing? Which managers produce high-performing teams?"))
@@ -607,7 +689,7 @@ with tabs[5]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("strategic ROI", es_f[["employee_id","roi","net_contribution","avg_incentive","avg_kpi"]].describe().round(3).to_string(),
                            "Net contribution per employee? Cost of attrition? Which incentives drive performance?"))
@@ -649,7 +731,7 @@ with tabs[6]:
     st.dataframe(ps[["project_name","status","total_revenue","total_cost","total_penalty","margin","avg_kpi","avg_util","emp_count"]].round(2), use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("project portfolio", ps[["project_name","total_revenue","total_penalty","margin","avg_kpi","status"]].round(2).to_string(),
                            "Which projects are at risk? Where are penalties coming from?"))
@@ -699,7 +781,7 @@ with tabs[7]:
     st.dataframe(lv_emp.sort_values("absenteeism", ascending=False), use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("leave patterns", lv_emp.describe().round(2).to_string(),
                            "What are the absenteeism risks? Is sick/unplanned leave concentrated in specific teams?"))
