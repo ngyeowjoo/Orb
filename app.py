@@ -392,82 +392,461 @@ except Exception as e:
 # ═══════════════════════════════════════════════
 tabs = st.tabs(["💬 Ask","💰 Revenue & Cost","⚡ Productivity","👥 Redundancy","🏆 Performance","🎯 Strategic","🏗 Projects","🌿 Leaves","🚨 Issues"])
 
-# ─── TAB 0: ASK ───────────────────────────────
-with tabs[0]:
-    sec("💬 Natural Language Query")
-    examples = ["","Which employees have low utilisation?","Show high cost low KPI employees",
-                "Revenue per hour by employee","Which projects have penalties?",
-                "Who are bottom 10% ROI employees?","Correlation between cost and performance",
-                "Sick leave outliers","Compare utilisation by department",
-                "Which employees contribute below cost?"]
-    sel_ex = st.selectbox("Quick examples →", examples, label_visibility="collapsed")
-    q = st.text_input("Ask anything:", value=sel_ex, placeholder="e.g. 'high cost low KPI' or 'project penalties'")
+# ═══════════════════════════════════════════════
+# SHARED QUERY RENDERER — used by both RAG and AI Ask
+# ═══════════════════════════════════════════════
+def parse_and_render(q, key_prefix="rag"):
+    """
+    Improved structured parser. Handles directionality, top/bottom N,
+    ROI (top + bottom), overtime, attrition, manager, tenure, redundancy,
+    department compare, and all core metrics.
+    Returns True if a match was found, False otherwise.
+    """
+    ql = q.lower()
+    es_f = filter_emp(emp_summary())
+    ps   = proj_summary()
 
-    if q:
-        ql = q.lower()
-        es_f = filter_emp(emp_summary())
+    # ── helpers ──────────────────────────────────
+    def top_n():
+        m = re.search(r"(top|bottom)\s*(\d+)", ql)
+        return int(m.group(2)) if m else None
 
-        if any(x in ql for x in ["correlation","relationship","correlate"]):
-            sec("↗ Correlation Matrix")
-            cols_c = ["avg_util","avg_kpi","avg_total_cost","net_contribution","avg_rev_per_hr"]
-            corr = es_f[cols_c].corr()
+    def pct_n():
+        m = re.search(r"(top|bottom)\s*(\d+)\s*%", ql)
+        return int(m.group(2)) if m else None
+
+    is_top    = any(x in ql for x in ["top","best","highest","most","above","exceed","high","who are top","who has highest"])
+    is_bottom = any(x in ql for x in ["bottom","worst","lowest","least","below","under","poor","low","who are bottom","who has lowest"])
+    n         = top_n() or 10
+    pct       = pct_n()
+
+    def topbot_df(df, col, ascending):
+        if pct:
+            thr = df[col].quantile(1 - pct/100) if not ascending else df[col].quantile(pct/100)
+            return df[df[col] >= thr] if not ascending else df[df[col] <= thr]
+        return df.sort_values(col, ascending=ascending).head(n)
+
+    # ── CORRELATION ──────────────────────────────
+    if any(x in ql for x in ["correlation","relationship","correlate","linked"]):
+        sec("↗ Correlation Matrix")
+        cols_c = ["avg_util","avg_kpi","avg_total_cost","net_contribution","avg_rev_per_hr"]
+        corr = es_f[cols_c].corr()
+        c1, c2 = st.columns(2)
+        with c1:
             fig = go.Figure(go.Heatmap(z=corr.values, x=corr.columns, y=corr.index,
                 colorscale=[[0,C_BAD],[0.5,"#fff8e1"],[1,C_AMBER]],
                 zmid=0, text=corr.round(2).values, texttemplate="%{text}"))
-            fig.update_layout(**CT, title="Workforce Correlation")
-            st.plotly_chart(fig, use_container_width=True)
-            ai_button("workforce correlation", corr.round(3).to_string(), key="btn_corr_ask")
+            fig.update_layout(**CT, title="Workforce Correlation"); st.plotly_chart(fig, use_container_width=True)
+        with c2:
+            fig = px.scatter(es_f, x="avg_util", y="avg_kpi", trendline="ols",
+                             color="avg_total_cost", color_continuous_scale=["#fff8e1",C_AMBER],
+                             title="Util vs KPI")
+            fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        ai_button("workforce correlation", corr.round(3).to_string(), key=f"{key_prefix}_corr")
+        return True
 
-        elif any(x in ql for x in ["penalty","penalties"]):
-            sec("⚠ Project Penalties")
-            ps_p = proj_summary().sort_values("total_penalty", ascending=False)
-            fig = px.bar(ps_p, x="project_name", y="total_penalty", color_discrete_sequence=[C_WARN])
-            fig.update_layout(**CT); fmt_axes(fig)
-            st.plotly_chart(fig, use_container_width=True)
-            st.dataframe(ps_p[["project_name","total_revenue","total_penalty","margin","avg_kpi"]].round(2), use_container_width=True)
+    # ── PENALTIES ────────────────────────────────
+    if any(x in ql for x in ["penalty","penalties"]):
+        sec("⚠ Project Penalties")
+        ps_p = ps.sort_values("total_penalty", ascending=False)
+        fig = px.bar(ps_p, x="project_name", y="total_penalty", color_discrete_sequence=[C_WARN])
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(ps_p[["project_name","total_revenue","total_penalty","margin","avg_kpi"]].round(2), use_container_width=True)
+        ai_button("project penalties", ps_p[["project_name","total_penalty","avg_kpi"]].to_string(), key=f"{key_prefix}_pen")
+        return True
 
-        elif any(x in ql for x in ["sick","leave","leaves","unplanned"]):
-            sec("🌿 Leave Analysis")
-            lv = filter_emp(emp_summary())[["employee_id","name","department","planned","unplanned","sick","total_leaves"]].sort_values("total_leaves", ascending=False)
-            st.dataframe(lv.head(20), use_container_width=True)
+    # ── LEAVES ───────────────────────────────────
+    if any(x in ql for x in ["sick","leave","leaves","unplanned","planned","absent","absentee"]):
+        sec("🌿 Leave Analysis")
+        lv = es_f[["employee_id","name","department","planned","unplanned","sick","total_leaves"]].copy()
+        lv["absenteeism"] = lv["unplanned"] + lv["sick"]
+        if is_top or "most" in ql or "high" in ql:
+            lv = lv.sort_values("absenteeism", ascending=False).head(n)
+            sec_label = f"Top {n} by Absenteeism"
+        elif "sick" in ql:
+            lv = lv.sort_values("sick", ascending=False).head(n)
+            sec_label = f"Top {n} Sick Leave"
+        elif "unplanned" in ql:
+            lv = lv.sort_values("unplanned", ascending=False).head(n)
+            sec_label = f"Top {n} Unplanned Leave"
+        else:
+            lv = lv.sort_values("total_leaves", ascending=False).head(20)
+            sec_label = "All Leave"
+        c1, c2 = st.columns([1.5,1])
+        with c1: st.dataframe(lv, use_container_width=True)
+        with c2:
             fig = px.bar(lv.head(15), x="employee_id", y=["planned","unplanned","sick"],
                          barmode="stack", color_discrete_sequence=[C_AMBER, C_WARN, C_BAD])
-            fig.update_layout(**CT); fmt_axes(fig)
-            st.plotly_chart(fig, use_container_width=True)
+            fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        return True
 
-        elif any(x in ql for x in ["roi","bottom 10","contribute below","below cost"]):
-            sec("📉 Low ROI Employees")
-            df = es_f.sort_values("roi").head(20)
-            fig = px.bar(df, x="employee_id", y="roi", color_discrete_sequence=[C_WARN])
-            fig.add_hline(y=0, line_dash="dash", line_color=C_BAD)
-            fig.update_layout(**CT); fmt_axes(fig)
-            st.plotly_chart(fig, use_container_width=True)
-            st.dataframe(df[["employee_id","name","role","avg_total_cost","net_contribution","roi"]].round(2), use_container_width=True)
-            ai_button("employee ROI", df[["employee_id","avg_total_cost","net_contribution","roi"]].head(10).to_string(), q, key="employee_ROI")
-
-        elif any(x in ql for x in ["revenue per hour","rev per hr"]):
-            sec("💹 Revenue per Hour")
-            df = es_f.sort_values("avg_rev_per_hr", ascending=False)
-            fig = px.bar(df.head(20), x="employee_id", y="avg_rev_per_hr",
-                         color="avg_rev_per_hr", color_continuous_scale=["#fff8e1", C_AMBER])
-            fig.update_layout(**CT); fmt_axes(fig)
-            st.plotly_chart(fig, use_container_width=True)
-
+    # ── ROI ──────────────────────────────────────
+    if any(x in ql for x in ["roi","return on investment","net contribution per"]):
+        if is_top and not is_bottom:
+            sec(f"🌟 Top {pct or n}{'%' if pct else ''} ROI Employees")
+            df = topbot_df(es_f, "roi", ascending=False)
+            color = C_GOOD
         else:
-            col  = "avg_util" if "util" in ql else "avg_kpi" if "kpi" in ql else "avg_total_cost" if "cost" in ql else "avg_kpi"
-            label= "Utilisation" if "util" in ql else "KPI" if "kpi" in ql else "Cost" if "cost" in ql else "KPI"
-            dire = "below" if any(x in ql for x in ["low","below","under","worst","bottom","poor"]) else "above"
-            mn   = re.search(r"(top|bottom)\s*(\d+)", ql)
-            n    = int(mn.group(2)) if mn else 15
-            df   = es_f.sort_values(col, ascending=(dire=="below")).head(n)
-            sec(f"📋 {label} · {dire} threshold · {len(df)} employees")
-            c1, c2 = st.columns([1.5,1])
-            with c1: st.dataframe(df[["employee_id","name","department","role",col]].round(3), use_container_width=True)
+            sec(f"📉 Bottom {pct or n}{'%' if pct else ''} ROI Employees")
+            df = topbot_df(es_f, "roi", ascending=True)
+            color = C_WARN
+        fig = px.bar(df, x="employee_id", y="roi", color_discrete_sequence=[color])
+        fig.add_hline(y=0, line_dash="dash", line_color=C_BAD)
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(df[["employee_id","name","role","department","avg_total_cost","net_contribution","roi"]].round(3), use_container_width=True)
+        ai_button("employee ROI", df[["employee_id","avg_total_cost","net_contribution","roi"]].round(3).to_string(), q, key=f"{key_prefix}_roi")
+        return True
+
+    # ── BELOW COST / NEGATIVE CONTRIBUTION ───────
+    if any(x in ql for x in ["below cost","contribute below","negative contribution","neg contribution","not contributing"]):
+        sec("📉 Employees Contributing Below Cost")
+        df = es_f[es_f["net_contribution"] < 0].sort_values("net_contribution")
+        fig = px.bar(df.head(15), x="employee_id", y="net_contribution", color_discrete_sequence=[C_BAD])
+        fig.add_hline(y=0, line_dash="dash"); fig.update_layout(**CT); fmt_axes(fig)
+        st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(df[["employee_id","name","role","avg_total_cost","net_contribution","avg_kpi"]].round(2), use_container_width=True)
+        ai_button("negative contribution", df[["employee_id","avg_total_cost","net_contribution"]].round(2).to_string(), q, key=f"{key_prefix}_negcont")
+        return True
+
+    # ── REVENUE PER HOUR ─────────────────────────
+    if any(x in ql for x in ["revenue per hour","rev per hour","rev/hr","output per hour","revenue efficiency"]):
+        asc = is_bottom and not is_top
+        sec(f"💹 {'Lowest' if asc else 'Highest'} Revenue per Hour")
+        df = es_f.sort_values("avg_rev_per_hr", ascending=asc).head(n)
+        fig = px.bar(df, x="employee_id", y="avg_rev_per_hr",
+                     color="avg_rev_per_hr", color_continuous_scale=["#fff8e1", C_AMBER if not asc else C_WARN])
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(df[["employee_id","name","role","avg_rev_per_hr","avg_util","avg_kpi"]].round(2), use_container_width=True)
+        return True
+
+    # ── OVERTIME ─────────────────────────────────
+    if any(x in ql for x in ["overtime","over time","overworked","working extra"]):
+        sec("⏱ Overtime Analysis")
+        df = es_f.sort_values("avg_overtime", ascending=False).head(n)
+        c1, c2 = st.columns(2)
+        with c1:
+            fig = px.bar(df, x="employee_id", y="avg_overtime", color_discrete_sequence=[C_WARN],
+                         title=f"Top {n} Overtime Hours/Month")
+            fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        with c2:
+            fig = px.scatter(es_f, x="avg_overtime", y="avg_rev_per_hr",
+                             color="avg_kpi", color_continuous_scale=["#fff8e1",C_AMBER],
+                             title="Overtime vs Revenue per Hour")
+            fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(df[["employee_id","name","department","avg_overtime","avg_util","avg_kpi","avg_rev_per_hr"]].round(2), use_container_width=True)
+        ai_button("overtime analysis", df[["employee_id","avg_overtime","avg_rev_per_hr","avg_kpi"]].round(2).to_string(), q, key=f"{key_prefix}_ot")
+        return True
+
+    # ── MANAGER PERFORMANCE ──────────────────────
+    if any(x in ql for x in ["manager","management","team lead","which manager"]):
+        sec("👔 Manager Effectiveness")
+        mgr = es_f.groupby("manager_id").agg(
+            team_kpi=("avg_kpi","mean"), team_util=("avg_util","mean"),
+            headcount=("employee_id","count"), team_cost=("avg_total_cost","mean")).reset_index()
+        if is_top:
+            mgr = mgr.sort_values("team_kpi", ascending=False)
+        else:
+            mgr = mgr.sort_values("team_kpi", ascending=True)
+        fig = px.bar(mgr, x="manager_id", y="team_kpi",
+                     color="team_kpi", color_continuous_scale=["#fff8e1",C_GOOD],
+                     title="Team Avg KPI by Manager")
+        fig.add_hline(y=kpi_thr, line_dash="dash", line_color=C_BAD)
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(mgr.round(3), use_container_width=True)
+        ai_button("manager effectiveness", mgr.round(3).to_string(), q, key=f"{key_prefix}_mgr")
+        return True
+
+    # ── ATTRITION ────────────────────────────────
+    if any(x in ql for x in ["attrition","resign","turnover","exit","replacement cost","breakeven","break even"]):
+        sec("🚪 Attrition & Replacement Cost")
+        if "dim_attrition" in D:
+            atr = D["dim_attrition"].merge(D["dim_employee"][["employee_id","name","role","department"]], on="employee_id", how="left")
+            c1, c2 = st.columns([1,2])
+            with c1:
+                st.metric("Total Attrition Cost", f"${atr['replacement_cost'].sum():,.0f}")
+                st.metric("Avg Break-even",        f"{atr['months_to_breakeven'].mean():.1f} mo")
             with c2:
-                fig = px.histogram(es_f, x=col, nbins=20, color_discrete_sequence=[C_AMBER])
-                fig.update_layout(**CT); fmt_axes(fig)
-                st.plotly_chart(fig, use_container_width=True)
-            ai_button(f"{label} analysis", df[["employee_id",col]].round(3).to_string(), q, key="ai_ask")
+                fig = px.bar(atr.sort_values("replacement_cost", ascending=False),
+                             x="employee_id", y="replacement_cost", color="exit_reason",
+                             color_discrete_sequence=PALETTE, title="Replacement Cost by Employee")
+                fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+            st.dataframe(atr[["name","role","department","exit_reason","replacement_cost","months_to_breakeven"]].round(1), use_container_width=True)
+        return True
+
+    # ── TENURE ───────────────────────────────────
+    if any(x in ql for x in ["tenure","experience","years","new hire","new employee","onboard"]):
+        sec("📅 Performance by Tenure")
+        es_f["tenure_band"] = pd.cut(es_f["tenure_years"], bins=[0,1,2,3,5,99],
+                                      labels=["<1yr","1-2yr","2-3yr","3-5yr","5+yr"])
+        ten = es_f.groupby("tenure_band", observed=True).agg(
+            avg_kpi=("avg_kpi","mean"), avg_util=("avg_util","mean"),
+            avg_cost=("avg_total_cost","mean"), count=("employee_id","count")).reset_index()
+        c1, c2 = st.columns(2)
+        with c1:
+            fig = px.bar(ten, x="tenure_band", y="avg_kpi",
+                         color="avg_kpi", color_continuous_scale=["#fff8e1",C_AMBER], title="KPI by Tenure")
+            fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        with c2:
+            fig = px.bar(ten, x="tenure_band", y="avg_util",
+                         color="avg_util", color_continuous_scale=["#fff8e1",C_AMBER], title="Utilisation by Tenure")
+            fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(ten.round(3), use_container_width=True)
+        return True
+
+    # ── DEPARTMENT COMPARE ───────────────────────
+    if any(x in ql for x in ["department","dept","by team","by group","compare","breakdown"]):
+        sec("🏢 Department Comparison")
+        dept = es_f.groupby("department").agg(
+            avg_kpi=("avg_kpi","mean"), avg_util=("avg_util","mean"),
+            avg_cost=("avg_total_cost","mean"), headcount=("employee_id","count"),
+            avg_rev=("total_revenue","mean")).reset_index()
+        col_y = ("avg_kpi" if "kpi" in ql or "performance" in ql
+                 else "avg_util" if "util" in ql
+                 else "avg_cost" if "cost" in ql
+                 else "avg_kpi")
+        fig = px.bar(dept.sort_values(col_y, ascending=False), x="department", y=col_y,
+                     color=col_y, color_continuous_scale=["#fff8e1",C_AMBER])
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(dept.round(3), use_container_width=True)
+        return True
+
+    # ── HIGH COST LOW KPI ────────────────────────
+    if ("cost" in ql and "kpi" in ql) or ("expensive" in ql and "perform" in ql) or "cost but" in ql:
+        sec("💸 High Cost, Low KPI Employees")
+        df = es_f[(es_f["avg_total_cost"] > es_f["avg_total_cost"].quantile(0.6)) &
+                  (es_f["avg_kpi"] < es_f["avg_kpi"].quantile(0.4))].sort_values("avg_total_cost", ascending=False)
+        fig = px.scatter(es_f, x="avg_total_cost", y="avg_kpi",
+                         color="net_contribution", color_continuous_scale=[[0,C_BAD],[0.5,"#fff8e1"],[1,C_GOOD]],
+                         hover_data=["name","role"], title="Cost vs KPI — flagged in orange-red")
+        # Highlight the flagged employees
+        fig.add_scatter(x=df["avg_total_cost"], y=df["avg_kpi"],
+                        mode="markers", marker=dict(color=C_WARN, size=12, symbol="circle-open", line=dict(width=2)),
+                        name="High Cost Low KPI")
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(df[["employee_id","name","role","department","avg_total_cost","avg_kpi","net_contribution"]].round(2), use_container_width=True)
+        ai_button("high cost low KPI", df[["employee_id","avg_total_cost","avg_kpi","net_contribution"]].round(2).to_string(), q, key=f"{key_prefix}_hclk")
+        return True
+
+    # ── UNDERPERFORMING ──────────────────────────
+    if any(x in ql for x in ["underperform","under perform","poor perform","low perform","struggling"]):
+        sec("⚠ Underperforming Employees")
+        df = es_f[(es_f["avg_kpi"] < kpi_thr) & (es_f["avg_util"] < util_thr)].sort_values("avg_kpi")
+        fig = px.scatter(df, x="avg_util", y="avg_kpi", text="employee_id",
+                         color="avg_total_cost", color_continuous_scale=["#fff8e1",C_WARN],
+                         title="Low KPI + Low Utilisation")
+        fig.add_hline(y=kpi_thr, line_dash="dash", line_color=C_BAD)
+        fig.add_vline(x=util_thr, line_dash="dash", line_color=C_BAD)
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(df[["employee_id","name","role","avg_kpi","avg_util","avg_total_cost"]].round(3), use_container_width=True)
+        return True
+
+    # ── TOP PERFORMERS ───────────────────────────
+    if any(x in ql for x in ["top perform","best perform","star","high perform","excel","outstanding"]):
+        sec(f"🌟 Top {n} Performers")
+        es_f["perf_score"] = (es_f["avg_kpi"] * 0.4 + es_f["avg_util"] * 0.3 + es_f["avg_rev_per_hr"].rank(pct=True) * 0.3)
+        df = es_f.sort_values("perf_score", ascending=False).head(n)
+        fig = px.bar(df, x="employee_id", y="perf_score", color_discrete_sequence=[C_GOOD],
+                     title=f"Top {n} Performance Score")
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(df[["employee_id","name","role","department","avg_kpi","avg_util","avg_rev_per_hr","perf_score"]].round(3), use_container_width=True)
+        return True
+
+    # ── UNDER-RECOGNISED ─────────────────────────
+    if any(x in ql for x in ["under-recogni","underrecogni","unrecogni","hidden gem","overlooked","low rating high"]):
+        sec("💎 Under-Recognised High Performers")
+        df = es_f[(es_f["avg_kpi"] >= kpi_thr) & (es_f["avg_rating"] < 3.5)].sort_values("avg_kpi", ascending=False)
+        fig = px.bar(df.head(15), x="employee_id", y="avg_kpi",
+                     color_discrete_sequence=[C_GOOD], title="High KPI, Low Manager Rating")
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(df[["employee_id","name","role","avg_kpi","avg_rating","avg_total_cost"]].round(2), use_container_width=True)
+        ai_button("under-recognised performers", df[["employee_id","avg_kpi","avg_rating"]].round(2).to_string(), q, key=f"{key_prefix}_ur")
+        return True
+
+    # ── INCENTIVE ────────────────────────────────
+    if any(x in ql for x in ["incentive","bonus","reward","pay rise","increment"]):
+        sec("💰 Incentive vs Performance")
+        fig = px.scatter(es_f, x="avg_incentive", y="avg_kpi", trendline="ols",
+                         color="avg_util", color_continuous_scale=["#fff8e1",C_AMBER],
+                         hover_data=["name","role"], title="Incentive Spend vs KPI")
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        top_inc = es_f.sort_values("avg_incentive", ascending=False).head(n)
+        st.dataframe(top_inc[["employee_id","name","role","avg_incentive","avg_kpi","avg_util"]].round(2), use_container_width=True)
+        ai_button("incentive ROI", top_inc[["employee_id","avg_incentive","avg_kpi"]].round(2).to_string(), q, key=f"{key_prefix}_inc")
+        return True
+
+    # ── PROJECT REVENUE / MARGIN ──────────────────
+    if any(x in ql for x in ["project revenue","project margin","project profit","project performance","which project"]):
+        sec("🏗 Project Revenue & Margin")
+        fig = px.bar(ps.sort_values("margin", ascending=False), x="project_name", y=["total_revenue","total_cost"],
+                     barmode="group", color_discrete_sequence=[C_AMBER, C_WARN])
+        fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(ps[["project_name","status","total_revenue","total_cost","total_penalty","margin","avg_kpi"]].round(2), use_container_width=True)
+        return True
+
+    # ── GENERIC METRIC FILTER (fallback) ─────────
+    if any(x in ql for x in ["util","kpi","performance","cost","salary","productive","hour"]):
+        col   = ("avg_util"       if any(x in ql for x in ["util","productive","hours"]) else
+                 "avg_kpi"        if any(x in ql for x in ["kpi","performance","score"]) else
+                 "avg_total_cost" if any(x in ql for x in ["cost","salary","pay"])       else "avg_kpi")
+        label = ("Utilisation" if "util" in ql or "productive" in ql else
+                 "KPI"         if "kpi" in ql or "performance" in ql else
+                 "Cost"        if "cost" in ql or "salary" in ql     else "KPI")
+        asc   = is_bottom and not is_top
+        df    = es_f.sort_values(col, ascending=asc).head(n)
+        sec(f"📋 {'Lowest' if asc else 'Highest'} {label} · Top {n} employees")
+        c1, c2 = st.columns([1.5,1])
+        with c1: st.dataframe(df[["employee_id","name","department","role",col]].round(3), use_container_width=True)
+        with c2:
+            fig = px.histogram(es_f, x=col, nbins=20, color_discrete_sequence=[C_AMBER])
+            fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
+        ai_button(f"{label} analysis", df[["employee_id",col]].round(3).to_string(), q, key=f"{key_prefix}_gen")
+        return True
+
+    return False  # no match
+
+
+# ═══════════════════════════════════════════════
+# NLP INTENT PARSER — for Ask Anything (AI)
+# ═══════════════════════════════════════════════
+def ai_parse_intent(question: str) -> dict:
+    """Send question to AI, get back structured intent JSON."""
+    system = """You are a workforce analytics query parser.
+Given a natural language question, return ONLY a valid JSON object with these fields:
+{
+  "intent": one of [correlation, penalties, leaves, roi_top, roi_bottom, below_cost, revenue_per_hour,
+                    overtime, manager, attrition, tenure, department, high_cost_low_kpi,
+                    underperform, top_performers, under_recognised, incentive, project_revenue, metric_filter, unknown],
+  "metric": one of [avg_util, avg_kpi, avg_total_cost, avg_rev_per_hr, null],
+  "direction": one of [top, bottom, null],
+  "n": integer or null,
+  "pct": integer (if percentage mentioned) or null,
+  "department": string or null
+}
+Return ONLY the JSON. No explanation. No markdown."""
+
+    raw = call_ai(system, question)
+    try:
+        import json
+        raw = raw.strip().replace("```json","").replace("```","")
+        return json.loads(raw)
+    except Exception:
+        return {"intent": "unknown"}
+
+def intent_to_query(parsed: dict) -> str:
+    """Convert parsed intent back to a keyword query the parser understands."""
+    intent = parsed.get("intent", "unknown")
+    n      = parsed.get("n") or 10
+    pct    = parsed.get("pct")
+    dept   = parsed.get("department")
+    metric = parsed.get("metric","")
+    direction = parsed.get("direction","top")
+
+    mapping = {
+        "correlation":        "correlation",
+        "penalties":          "penalties",
+        "leaves":             "leaves",
+        "roi_top":            f"top {pct}% roi" if pct else f"top {n} roi",
+        "roi_bottom":         f"bottom {pct}% roi" if pct else f"bottom {n} roi",
+        "below_cost":         "contribute below cost",
+        "revenue_per_hour":   f"{'bottom' if direction=='bottom' else 'top'} {n} revenue per hour",
+        "overtime":           "overtime",
+        "manager":            f"{'top' if direction=='top' else 'worst'} manager",
+        "attrition":          "attrition",
+        "tenure":             "tenure",
+        "department":         f"compare by department {metric or 'kpi'}",
+        "high_cost_low_kpi":  "high cost low kpi",
+        "underperform":       "underperforming employees",
+        "top_performers":     f"top {n} performers",
+        "under_recognised":   "under-recognised",
+        "incentive":          "incentive",
+        "project_revenue":    "project revenue margin",
+        "metric_filter":      f"{'bottom' if direction=='bottom' else 'top'} {n} {metric or 'kpi'}",
+    }
+    q = mapping.get(intent, "")
+    if dept and q:
+        q += f" department {dept}"
+    return q
+
+
+# ─── TAB 0: ASK ───────────────────────────────
+with tabs[0]:
+
+    # ── Option A: Indexed Search ──────────────
+    sec("🗂 Indexed Search (RAG Query)")
+    RAG_EXAMPLES = [
+        "",
+        # Utilisation
+        "Which employees have low utilisation?",
+        "Top 10 highest utilisation employees",
+        # KPI / Performance
+        "Show high cost low KPI employees",
+        "Who are the top 10 performers?",
+        "Who are underperforming employees?",
+        "Who are under-recognised high performers?",
+        # ROI
+        "Who are top 10% ROI employees?",
+        "Who are bottom 10% ROI employees?",
+        "Which employees contribute below cost?",
+        # Revenue
+        "Revenue per hour by employee",
+        "Bottom 10 revenue per hour employees",
+        "Which project has the best margin?",
+        "Project revenue and cost breakdown",
+        # Cost & Incentives
+        "Show high cost employees",
+        "Do incentives improve performance?",
+        # Overtime
+        "Which employees work the most overtime?",
+        "Overtime vs output analysis",
+        # Leaves
+        "Who has the most sick leave?",
+        "Unplanned leave analysis",
+        "Top 10 absentees",
+        # Managers
+        "Which managers have the best performing teams?",
+        "Which managers have the worst performing teams?",
+        # Attrition
+        "What is the cost of attrition?",
+        "Employee turnover and replacement cost",
+        # Tenure
+        "Performance by tenure",
+        "How do new hires perform?",
+        # Department
+        "Compare KPI by department",
+        "Utilisation breakdown by department",
+        # Correlation
+        "Correlation between cost and performance",
+        # Penalties
+        "Which projects have penalties?",
+    ]
+    sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES, label_visibility="collapsed")
+    rag_q   = st.text_input("Or type a structured query:", value=sel_rag,
+                             placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
+                             key="rag_input")
+    if rag_q:
+        found = parse_and_render(rag_q, key_prefix="rag")
+        if not found:
+            st.warning("No match found. Try rephrasing or use **Ask Anything (AI)** below for complex questions.")
+
+    st.markdown("---")
+
+    # ── Option B: Ask Anything (AI) ──────────
+    sec("🤖 Ask Anything (AI)")
+    st.caption("⚠️ AI-powered: may misunderstand intent and produce inaccuracies.")
+    ai_q = st.text_input("Ask in plain language:",
+                          placeholder="e.g. 'Who are the top 10% ROI employees?' or 'Which managers consistently underdeliver?'",
+                          key="ai_ask_input")
+    if ai_q:
+        with st.spinner("Parsing intent..."):
+            parsed = ai_parse_intent(ai_q)
+        routed_q = intent_to_query(parsed)
+        if routed_q:
+            st.caption(f"Interpreted as: *{routed_q}*")
+            found = parse_and_render(routed_q, key_prefix="ai")
+            if not found:
+                st.warning("Could not match intent to a known analysis. Try rephrasing or use Indexed Search.")
+        else:
+            st.warning("Could not interpret question. Try Indexed Search for structured queries.")
 
 # ─── TAB 1: REVENUE & COST ────────────────────
 with tabs[1]:
