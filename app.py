@@ -14,7 +14,7 @@ st.set_page_config(
     page_title="COO AI Analytics",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={"About": "COO AI Analytics — Powered by JoAI"}
+    menu_items={"About": "COO AI Analytics — Powered by Claude"}
 )
 
 # ═══════════════════════════════════════════════
@@ -259,16 +259,16 @@ all_depts = ["All"] + sorted(D["dim_employee"]["department"].dropna().unique().t
 sel_dept  = st.sidebar.selectbox("Department", all_depts)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🤖 AI")
-ai_provider = st.sidebar.radio("AI Provider", ["JoAI 1", "JoAI 2"], index=0, horizontal=True)
-if ai_provider == "JoAI 1":
-    ai_model = st.sidebar.selectbox("JoAI 1 Model", [
+ai_provider = st.sidebar.radio("AI Provider", ["DeepSeek", "Claude"], index=0, horizontal=True)
+if ai_provider == "DeepSeek":
+    ai_model = st.sidebar.selectbox("DeepSeek Model", [
         "deepseek-chat",       # V3 — fast, cost-efficient
         "deepseek-reasoner",   # R1 — analytical, slower
     ])
-    ai_model_label = "JoAI 1 · V3 (deepseek-chat)" if ai_model == "deepseek-chat" else "JoAI 1 · R1 (deepseek-reasoner)"
+    ai_model_label = "DeepSeek V3 (deepseek-chat)" if ai_model == "deepseek-chat" else "DeepSeek R1 (deepseek-reasoner)"
 else:
     ai_model = "claude-sonnet-4-20250514"
-    ai_model_label = "JoAI 2 · Sonnet"
+    ai_model_label = "Claude Sonnet"
 st.sidebar.caption(f"Model: {ai_model_label}")
 ai_depth = st.sidebar.selectbox("Response depth", ["Concise","Detailed","Strategic"])
 auto_ai  = st.sidebar.toggle("Auto AI insight", value=True)
@@ -297,10 +297,10 @@ def call_ai(system: str, user: str) -> str:
              "Strategic":"Focus on board-level strategic implications and risks."}[ai_depth]
     full_system = system + "\n\n" + depth
 
-    if ai_provider == "JoAI 1":
+    if ai_provider == "DeepSeek":
         key = st.secrets.get("DEEPSEEK_API_KEY", None)
         if not key:
-            return "⚠ Add `DEEPSEEK_API_KEY` to Streamlit secrets to enable JoAI 1 insights."
+            return "⚠ Add `DEEPSEEK_API_KEY` to Streamlit secrets to enable DeepSeek insights."
         r = requests.post(
             "https://api.deepseek.com/chat/completions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
@@ -316,12 +316,12 @@ def call_ai(system: str, user: str) -> str:
         res = r.json()
         if "choices" in res and res["choices"]:
             return res["choices"][0]["message"]["content"]
-        return f"⚠ JoAI 1 error: {res.get('error',{}).get('message','Unknown')}"
+        return f"⚠ DeepSeek error: {res.get('error',{}).get('message','Unknown')}"
 
-    else:  # JoAI 2
+    else:  # Claude
         key = st.secrets.get("ANTHROPIC_API_KEY", None)
         if not key:
-            return "⚠ Add `ANTHROPIC_API_KEY` to Streamlit secrets to enable JoAI 2 insights."
+            return "⚠ Add `ANTHROPIC_API_KEY` to Streamlit secrets to enable Claude insights."
         r = requests.post(
             "https://api.anthropic.com/v1/messages",
             headers={"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},
@@ -332,7 +332,7 @@ def call_ai(system: str, user: str) -> str:
         res = r.json()
         if "content" in res and res["content"]:
             return res["content"][0]["text"]
-        return f"⚠ JoAI 2 error: {res.get('error',{}).get('message','Unknown')}"
+        return f"⚠ Claude error: {res.get('error',{}).get('message','Unknown')}"
 
 # keep old name as alias so all call sites work unchanged
 call_claude = call_ai
@@ -346,7 +346,7 @@ def insight(context, data_str, question=""):
 # HEADER + KPI CARDS
 # ═══════════════════════════════════════════════
 st.markdown("# 🧠 COO AI Analytics")
-st.markdown('<p style="color:#9a7d30;font-size:0.85rem;margin-top:-8px;">Workforce & Project Intelligence · Powered by JoAI</p>', unsafe_allow_html=True)
+st.markdown('<p style="color:#9a7d30;font-size:0.85rem;margin-top:-8px;">Workforce & Project Intelligence · Powered by Claude</p>', unsafe_allow_html=True)
 
 try:
     es_h = filter_emp(emp_summary())
@@ -520,7 +520,7 @@ with tabs[1]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("revenue and cost", ps[["project_name","total_revenue","total_cost","total_penalty","margin","avg_kpi"]].round(2).to_string(),
                            "Highest cost lowest contribution? Overspending on incentives?"))
@@ -571,7 +571,7 @@ with tabs[2]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("productivity", es_f[["employee_id","avg_util","avg_kpi","avg_rev_per_hr","avg_overtime"]].describe().round(3).to_string(),
                            "Which teams work overtime without more output? Who are top performers?"))
@@ -620,7 +620,7 @@ with tabs[3]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("redundancy", neg[["employee_id","role","avg_total_cost","net_contribution"]].head(10).round(2).to_string(),
                            "Where can we reduce headcount? Which roles have overlapping output?"))
@@ -675,7 +675,7 @@ with tabs[4]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("performance", mgr_p.round(3).to_string(),
                            "Who are high-rated but low-performing? Which managers produce high-performing teams?"))
@@ -727,7 +727,7 @@ with tabs[5]:
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("strategic ROI", es_f[["employee_id","roi","net_contribution","avg_incentive","avg_kpi"]].describe().round(3).to_string(),
                            "Net contribution per employee? Cost of attrition? Which incentives drive performance?"))
@@ -769,7 +769,7 @@ with tabs[6]:
     st.dataframe(ps[["project_name","status","total_revenue","total_cost","total_penalty","margin","avg_kpi","avg_util","emp_count"]].round(2), use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("project portfolio", ps[["project_name","total_revenue","total_penalty","margin","avg_kpi","status"]].round(2).to_string(),
                            "Which projects are at risk? Where are penalties coming from?"))
@@ -819,7 +819,7 @@ with tabs[7]:
     st.dataframe(lv_emp.sort_values("absenteeism", ascending=False), use_container_width=True)
 
     if auto_ai:
-        sec("🧠 JoAI Insight")
+        sec("🧠 Claude Insight")
         with st.spinner():
             ai_box(insight("leave patterns", lv_emp.describe().round(2).to_string(),
                            "What are the absenteeism risks? Is sick/unplanned leave concentrated in specific teams?"))
