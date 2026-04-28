@@ -259,6 +259,17 @@ all_depts = ["All"] + sorted(D["dim_employee"]["department"].dropna().unique().t
 sel_dept  = st.sidebar.selectbox("Department", all_depts)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🤖 AI")
+ai_provider = st.sidebar.radio("AI Provider", ["DeepSeek", "Claude"], index=0, horizontal=True)
+if ai_provider == "DeepSeek":
+    ai_model = st.sidebar.selectbox("DeepSeek Model", [
+        "deepseek-chat",       # V3 — fast, cost-efficient
+        "deepseek-reasoner",   # R1 — analytical, slower
+    ])
+    ai_model_label = "DeepSeek V3 (deepseek-chat)" if ai_model == "deepseek-chat" else "DeepSeek R1 (deepseek-reasoner)"
+else:
+    ai_model = "claude-sonnet-4-20250514"
+    ai_model_label = "Claude Sonnet"
+st.sidebar.caption(f"Model: {ai_model_label}")
 ai_depth = st.sidebar.selectbox("Response depth", ["Concise","Detailed","Strategic"])
 auto_ai  = st.sidebar.toggle("Auto AI insight", value=True)
 
@@ -280,24 +291,51 @@ def sec(label):
 def ai_box(text):
     st.markdown(f'<div class="ai-box">{text}</div>', unsafe_allow_html=True)
 
-def call_claude(system: str, user: str) -> str:
-    key = st.secrets.get("ANTHROPIC_API_KEY", None)
-    if not key:
-        return "⚠ Add `ANTHROPIC_API_KEY` to Streamlit secrets to enable AI insights."
+def call_ai(system: str, user: str) -> str:
     depth = {"Concise":"Be concise — max 4 bullet points total.",
              "Detailed":"Give thorough analysis referencing specific numbers.",
              "Strategic":"Focus on board-level strategic implications and risks."}[ai_depth]
-    r = requests.post(
-        "https://api.anthropic.com/v1/messages",
-        headers={"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},
-        json={"model":"claude-sonnet-4-20250514","max_tokens":1000,
-              "system": system + "\n\n" + depth,
-              "messages":[{"role":"user","content":user}]}
-    )
-    res = r.json()
-    if "content" in res and res["content"]:
-        return res["content"][0]["text"]
-    return f"⚠ API error: {res.get('error',{}).get('message','Unknown')}"
+    full_system = system + "\n\n" + depth
+
+    if ai_provider == "DeepSeek":
+        key = st.secrets.get("DEEPSEEK_API_KEY", None)
+        if not key:
+            return "⚠ Add `DEEPSEEK_API_KEY` to Streamlit secrets to enable DeepSeek insights."
+        r = requests.post(
+            "https://api.deepseek.com/chat/completions",
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={
+                "model": ai_model,
+                "max_tokens": 1000,
+                "messages": [
+                    {"role": "system", "content": full_system},
+                    {"role": "user",   "content": user}
+                ]
+            }
+        )
+        res = r.json()
+        if "choices" in res and res["choices"]:
+            return res["choices"][0]["message"]["content"]
+        return f"⚠ DeepSeek error: {res.get('error',{}).get('message','Unknown')}"
+
+    else:  # Claude
+        key = st.secrets.get("ANTHROPIC_API_KEY", None)
+        if not key:
+            return "⚠ Add `ANTHROPIC_API_KEY` to Streamlit secrets to enable Claude insights."
+        r = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},
+            json={"model":"claude-sonnet-4-20250514","max_tokens":1000,
+                  "system": full_system,
+                  "messages":[{"role":"user","content":user}]}
+        )
+        res = r.json()
+        if "content" in res and res["content"]:
+            return res["content"][0]["text"]
+        return f"⚠ Claude error: {res.get('error',{}).get('message','Unknown')}"
+
+# keep old name as alias so all call sites work unchanged
+call_claude = call_ai
 
 def insight(context, data_str, question=""):
     sys_p = f"You are a COO workforce analytics advisor. Context: {context}. Format with **Observation**, **Risk**, **Action** headers. Use bullet points."
