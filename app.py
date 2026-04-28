@@ -11,10 +11,10 @@ import plotly.graph_objects as go
 DATA_PATH = "data2/"
 
 st.set_page_config(
-    page_title="COO AI Analytics",
+    page_title="The Orb",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={"About": "COO AI Analytics — Powered by Claude"}
+    menu_items={"About": "The Orb — Powered by JoAI"}
 )
 
 # ═══════════════════════════════════════════════
@@ -356,8 +356,8 @@ def insight(context, data_str, question=""):
 # ═══════════════════════════════════════════════
 # HEADER + KPI CARDS
 # ═══════════════════════════════════════════════
-st.markdown("# 🧠 COO AI Analytics")
-st.markdown('<p style="color:#9a7d30;font-size:0.85rem;margin-top:-8px;">Workforce & Project Intelligence · Powered by Claude</p>', unsafe_allow_html=True)
+st.markdown("# 🔮 The Orb")
+st.markdown('<p style="color:#9a7d30;font-size:0.85rem;margin-top:-8px;">Workforce & Project Intelligence · Powered by JoAI</p>', unsafe_allow_html=True)
 
 try:
     es_h = filter_emp(emp_summary())
@@ -880,10 +880,19 @@ with tabs[0]:
         "High cost employees in HR",
     ]
     sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES, label_visibility="collapsed")
-    rag_q   = st.text_input("Or type a custom query:", value="",
-                             placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
-                             key="rag_input")
-    # Use typed input if present, otherwise use dropdown selection
+
+    # Clear custom input when dropdown selection changes
+    if "last_sel_rag" not in st.session_state:
+        st.session_state["last_sel_rag"] = sel_rag
+    if sel_rag != st.session_state["last_sel_rag"]:
+        st.session_state["last_sel_rag"] = sel_rag
+        st.session_state["rag_input"] = ""   # wipe custom text box
+
+    rag_q = st.text_input("Or type a custom query:", value="",
+                           placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
+                           key="rag_input")
+
+    # Typed input takes priority; dropdown fires when text box is empty
     active_q = rag_q.strip() if rag_q.strip() else sel_rag
     if active_q:
         found = parse_and_render(active_q, key_prefix="rag")
