@@ -399,12 +399,61 @@ def parse_and_render(q, key_prefix="rag"):
     """
     Improved structured parser. Handles directionality, top/bottom N,
     ROI (top + bottom), overtime, attrition, manager, tenure, redundancy,
-    department compare, and all core metrics.
+    department compare, project & department inline filters, and all core metrics.
     Returns True if a match was found, False otherwise.
     """
     ql = q.lower()
-    es_f = filter_emp(emp_summary())
+
+    # ── Inline project filter ─────────────────────
+    # Matches: "in Project Apollo", "for Project Beacon", "Project Apollo"
+    detected_project = None
+    all_proj_names = D["dim_project"]["project_name"].tolist()
+    all_proj_ids   = D["dim_project"]["project_id"].tolist()
+    for pname in all_proj_names:
+        if pname.lower() in ql:
+            detected_project = pname
+            break
+    # Also match short name e.g. "apollo" -> "Project Apollo"
+    if not detected_project:
+        for pname in all_proj_names:
+            short = pname.lower().replace("project ","").strip()
+            if short in ql:
+                detected_project = pname
+                break
+
+    # ── Inline department filter ──────────────────
+    # Matches: "in Engineering", "for Sales team", "Engineering department"
+    detected_dept = None
+    all_depts = D["dim_employee"]["department"].dropna().unique().tolist()
+    for dept in all_depts:
+        if dept.lower() in ql:
+            detected_dept = dept
+            break
+
+    # ── Apply inline filters on top of sidebar filters ──
+    es_base = filter_emp(emp_summary())
+    if detected_project:
+        pid = D["dim_project"].loc[D["dim_project"]["project_name"]==detected_project, "project_id"].values
+        if len(pid):
+            es_base = es_base[es_base["project_id"].isin(pid)]
+    if detected_dept:
+        es_base = es_base[es_base["department"] == detected_dept]
+
+    # Show active filter badge
+    filters_applied = []
+    if detected_project: filters_applied.append(f"📁 {detected_project}")
+    if detected_dept:    filters_applied.append(f"🏢 {detected_dept}")
+    if filters_applied:
+        st.info(f"Filtered by: {' · '.join(filters_applied)}")
+
+    es_f = es_base
     ps   = proj_summary()
+
+    # Filter project summary if project mentioned
+    if detected_project:
+        pid = D["dim_project"].loc[D["dim_project"]["project_name"]==detected_project,"project_id"].values
+        if len(pid):
+            ps = ps[ps["project_id"].isin(pid)]
 
     # ── helpers ──────────────────────────────────
     def top_n():
@@ -818,6 +867,17 @@ with tabs[0]:
         "Correlation between cost and performance",
         # Penalties
         "Which projects have penalties?",
+        # Project-specific
+        "Low utilisation in Project Apollo",
+        "Top performers in Project Beacon",
+        "High cost employees in Project Catalyst",
+        "Who are bottom ROI in Project Delta?",
+        # Department-specific
+        "Low KPI in Engineering",
+        "Top 5 performers in Sales",
+        "Overtime analysis for Operations",
+        "Absentees in Finance",
+        "High cost employees in HR",
     ]
     sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES, label_visibility="collapsed")
     rag_q   = st.text_input("Or type a custom query:", value="",
