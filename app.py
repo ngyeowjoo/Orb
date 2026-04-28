@@ -880,27 +880,33 @@ with tabs[0]:
         "High cost employees in HR",
     ]
     # ── Session state init ───────────────────
-    if "last_sel_rag"  not in st.session_state: st.session_state["last_sel_rag"]  = ""
-    if "rag_input"     not in st.session_state: st.session_state["rag_input"]     = ""
-    if "ai_ask_input"  not in st.session_state: st.session_state["ai_ask_input"]  = ""
+    if "rag_input"        not in st.session_state: st.session_state["rag_input"]        = ""
+    if "last_rag_q"       not in st.session_state: st.session_state["last_rag_q"]       = ""
+    if "rag_dropdown_idx" not in st.session_state: st.session_state["rag_dropdown_idx"] = 0
 
-    # ── Dropdown ─────────────────────────────
-    sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES, label_visibility="collapsed")
+    # ── Dropdown — index-controlled so we can reset it ──
+    sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES,
+                           index=st.session_state["rag_dropdown_idx"],
+                           label_visibility="collapsed",
+                           key="rag_selectbox")
 
-    # When dropdown changes to a real value → clear custom text box AND AI box
-    if sel_rag and sel_rag != st.session_state["last_sel_rag"]:
+    # When dropdown changes to a real selection → clear custom text box
+    if sel_rag and sel_rag != st.session_state.get("last_sel_rag", ""):
         st.session_state["last_sel_rag"] = sel_rag
-        st.session_state["rag_input"]    = ""   # clear custom query
+        st.session_state["rag_input"]    = ""
+        st.session_state["last_rag_q"]   = ""
 
     # ── Custom text box ───────────────────────
     rag_q = st.text_input("Or type a custom query:", value="",
                            placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
                            key="rag_input")
 
-    # When user types here → reset dropdown to blank and clear AI box
-    if rag_q.strip() and rag_q.strip() != st.session_state.get("last_rag_q", ""):
-        st.session_state["last_rag_q"]   = rag_q.strip()
-        st.session_state["last_sel_rag"] = ""   # dropdown will re-render at "" next cycle
+    # When user types here → reset dropdown back to index 0 (blank)
+    if rag_q.strip() and rag_q.strip() != st.session_state["last_rag_q"]:
+        st.session_state["last_rag_q"]       = rag_q.strip()
+        st.session_state["last_sel_rag"]     = ""
+        st.session_state["rag_dropdown_idx"] = 0   # snap dropdown back to blank
+        st.rerun()
 
     # Typed takes priority over dropdown
     active_q = rag_q.strip() if rag_q.strip() else sel_rag
