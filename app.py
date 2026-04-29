@@ -37,7 +37,7 @@ if not st.session_state["entered"]:
     div[data-testid="stVerticalBlock"] .stButton { text-align:center; }
     div[data-testid="stVerticalBlock"] .stButton > button {
         background: transparent !important;
-        border: 1.5px solid rgba(249,166,2,0.65) !important;
+        border: 10.5px solid rgba(249,166,2,0.65) !important;
         color: #F9A602 !important;
         font-family: 'DM Mono', monospace !important;
         font-size: 0.78rem !important;
@@ -81,7 +81,7 @@ body {
     position: absolute;
     border-radius: 50%;
     top: 50%; left: 50%;
-    border: 10px solid rgba(249,166,2,0.12);
+    border: 5px solid rgba(249,166,2,0.12);
     animation: pulse 4s ease-in-out infinite;
 }
 .ring:nth-child(1) { width:300px;height:300px; animation-delay:0s; }
