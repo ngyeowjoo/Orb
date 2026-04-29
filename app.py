@@ -164,7 +164,7 @@ body {
 .sub2 {
     font-family:'DM Mono',monospace; font-size:0.65rem;
     letter-spacing:0.20em; text-transform:uppercase;
-    color:rgba(249,166,2,0.30); margin-top:6px;
+    color:rgba(249,166,2,0.55); margin-top:6px;
     animation: fade-up 1.6s ease both; text-align:center;
 }
 
