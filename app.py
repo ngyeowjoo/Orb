@@ -81,7 +81,7 @@ body {
     position: absolute;
     border-radius: 50%;
     top: 50%; left: 50%;
-    border: 1px solid rgba(249,166,2,0.12);
+    border: 10px solid rgba(249,166,2,0.12);
     animation: pulse 4s ease-in-out infinite;
 }
 .ring:nth-child(1) { width:300px;height:300px; animation-delay:0s; }
@@ -109,7 +109,7 @@ body {
 
 /* Orb */
 .orb {
-    width:260px; height:260px; border-radius:50%; position:relative; z-index:2;
+    width:160px; height:160px; border-radius:50%; position:relative; z-index:2;
     background: radial-gradient(circle at 38% 35%,
         #fff8e0 0%, #F9A602 25%, #c97f00 52%, #7a4500 78%, #1a0800 100%);
     box-shadow:
