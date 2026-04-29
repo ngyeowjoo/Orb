@@ -13,7 +13,7 @@ DATA_PATH = "data2/"
 st.set_page_config(
     page_title="The Orb",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
     menu_items={"About": "The Orb — Powered by JoAI"}
 )
 
