@@ -109,7 +109,7 @@ body {
 
 /* Orb */
 .orb {
-    width:160px; height:160px; border-radius:50%; position:relative; z-index:2;
+    width:260px; height:260px; border-radius:50%; position:relative; z-index:2;
     background: radial-gradient(circle at 38% 35%,
         #fff8e0 0%, #F9A602 25%, #c97f00 52%, #7a4500 78%, #1a0800 100%);
     box-shadow:
