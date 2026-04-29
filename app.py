@@ -24,218 +24,227 @@ if "entered" not in st.session_state:
     st.session_state["entered"] = False
 
 if not st.session_state["entered"]:
+    import streamlit.components.v1 as components
+
+    # Hide Streamlit chrome
     st.markdown("""
+    <style>
+    #MainMenu, header, footer, section[data-testid="stSidebar"] { display:none !important; }
+    .stApp { background: #000 !important; }
+    .block-container { padding: 0 !important; max-width: 100% !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    components.html("""
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
 
-/* Hide all Streamlit chrome on entry page */
-#MainMenu, header, footer, section[data-testid="stSidebar"] { display: none !important; }
-.stApp { background: #000 !important; }
-.block-container { padding: 0 !important; max-width: 100% !important; }
-
-/* Full screen entry */
-.orb-entry {
-    position: fixed;
-    inset: 0;
+body {
     background: radial-gradient(ellipse at 50% 60%, #1a0a00 0%, #000 70%);
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
     overflow: hidden;
+    font-family: 'Syne', sans-serif;
 }
 
-/* Ambient glow rings */
-.orb-ring {
+/* Rings */
+.ring {
     position: absolute;
     border-radius: 50%;
     border: 1px solid rgba(249,166,2,0.12);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(1);
     animation: pulse-ring 4s ease-in-out infinite;
 }
-.orb-ring:nth-child(1) { width: 340px; height: 340px; animation-delay: 0s; }
-.orb-ring:nth-child(2) { width: 500px; height: 500px; animation-delay: 0.6s; border-color: rgba(249,166,2,0.07); }
-.orb-ring:nth-child(3) { width: 680px; height: 680px; animation-delay: 1.2s; border-color: rgba(249,166,2,0.04); }
-.orb-ring:nth-child(4) { width: 880px; height: 880px; animation-delay: 1.8s; border-color: rgba(249,166,2,0.02); }
-
+.ring:nth-child(1) { width:320px; height:320px; animation-delay:0s; }
+.ring:nth-child(2) { width:480px; height:480px; animation-delay:0.7s; border-color:rgba(249,166,2,0.07); }
+.ring:nth-child(3) { width:660px; height:660px; animation-delay:1.4s; border-color:rgba(249,166,2,0.04); }
+.ring:nth-child(4) { width:860px; height:860px; animation-delay:2.1s; border-color:rgba(249,166,2,0.02); }
 @keyframes pulse-ring {
-    0%, 100% { transform: scale(1);   opacity: 1; }
-    50%       { transform: scale(1.04); opacity: 0.5; }
+    0%,100% { transform:translate(-50%,-50%) scale(1); opacity:1; }
+    50%      { transform:translate(-50%,-50%) scale(1.05); opacity:0.4; }
 }
 
-/* The Orb itself */
-.orb-sphere {
-    width: 180px;
-    height: 180px;
+/* Particles */
+.particle {
+    position: absolute;
     border-radius: 50%;
-    background: radial-gradient(circle at 38% 35%,
-        #fff8e0 0%,
-        #F9A602 25%,
-        #c97f00 55%,
-        #7a4500 80%,
-        #1a0800 100%
-    );
-    box-shadow:
-        0 0 60px 20px rgba(249,166,2,0.45),
-        0 0 120px 50px rgba(249,166,2,0.20),
-        0 0 200px 80px rgba(249,166,2,0.08),
-        inset 0 -20px 40px rgba(0,0,0,0.5),
-        inset 0 10px 30px rgba(255,255,255,0.15);
-    animation: orb-float 5s ease-in-out infinite, orb-glow 3s ease-in-out infinite alternate;
+    background: rgba(249,166,2,0.7);
+    bottom: -10px;
+    animation: rise linear infinite;
+    pointer-events: none;
+}
+@keyframes rise {
+    0%   { transform:translateY(0) scale(0); opacity:0; }
+    10%  { opacity:1; }
+    90%  { opacity:0.5; }
+    100% { transform:translateY(-105vh) scale(1); opacity:0; }
+}
+
+/* Orb */
+.orb {
+    width: 170px; height: 170px;
+    border-radius: 50%;
     position: relative;
+    background: radial-gradient(circle at 38% 35%,
+        #fff8e0 0%, #F9A602 25%, #c97f00 52%, #7a4500 78%, #1a0800 100%);
+    box-shadow:
+        0 0 55px 18px rgba(249,166,2,0.45),
+        0 0 110px 45px rgba(249,166,2,0.20),
+        0 0 190px 75px rgba(249,166,2,0.08),
+        inset 0 -18px 36px rgba(0,0,0,0.5),
+        inset 0 8px 26px rgba(255,255,255,0.14);
+    animation: float 5s ease-in-out infinite, glow 3s ease-in-out infinite alternate;
     z-index: 2;
-    cursor: pointer;
+}
+.orb::before {
+    content:'';
+    position:absolute;
+    top:17%; left:21%;
+    width:36%; height:24%;
+    background:radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, transparent 70%);
+    border-radius:50%;
+    transform:rotate(-30deg);
+}
+.orb::after {
+    content:'';
+    position:absolute;
+    bottom:20%; right:19%;
+    width:18%; height:11%;
+    background:radial-gradient(ellipse, rgba(255,220,100,0.35) 0%, transparent 70%);
+    border-radius:50%;
+}
+@keyframes float {
+    0%,100% { transform:translateY(0); }
+    50%      { transform:translateY(-16px); }
+}
+@keyframes glow {
+    0%   { box-shadow: 0 0 55px 18px rgba(249,166,2,0.45),0 0 110px 45px rgba(249,166,2,0.20),0 0 190px 75px rgba(249,166,2,0.08),inset 0 -18px 36px rgba(0,0,0,0.5),inset 0 8px 26px rgba(255,255,255,0.14); }
+    100% { box-shadow: 0 0 80px 28px rgba(249,166,2,0.62),0 0 160px 65px rgba(249,166,2,0.28),0 0 260px 95px rgba(249,166,2,0.12),inset 0 -18px 36px rgba(0,0,0,0.5),inset 0 8px 26px rgba(255,255,255,0.18); }
 }
 
-/* Specular highlight */
-.orb-sphere::before {
-    content: '';
-    position: absolute;
-    top: 18%;
-    left: 22%;
-    width: 35%;
-    height: 25%;
-    background: radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, transparent 70%);
-    border-radius: 50%;
-    transform: rotate(-30deg);
-}
-
-/* Secondary shimmer */
-.orb-sphere::after {
-    content: '';
-    position: absolute;
-    bottom: 20%;
-    right: 20%;
-    width: 18%;
-    height: 12%;
-    background: radial-gradient(ellipse, rgba(255,220,100,0.35) 0%, transparent 70%);
-    border-radius: 50%;
-}
-
-@keyframes orb-float {
-    0%, 100% { transform: translateY(0px);   }
-    50%       { transform: translateY(-18px); }
-}
-@keyframes orb-glow {
-    0%   { box-shadow: 0 0 60px 20px rgba(249,166,2,0.45), 0 0 120px 50px rgba(249,166,2,0.20), 0 0 200px 80px rgba(249,166,2,0.08), inset 0 -20px 40px rgba(0,0,0,0.5), inset 0 10px 30px rgba(255,255,255,0.15); }
-    100% { box-shadow: 0 0 80px 30px rgba(249,166,2,0.60), 0 0 160px 70px rgba(249,166,2,0.28), 0 0 260px 100px rgba(249,166,2,0.12), inset 0 -20px 40px rgba(0,0,0,0.5), inset 0 10px 30px rgba(255,255,255,0.18); }
-}
-
-/* Title */
-.orb-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 3.2rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: #fff;
-    margin-top: 36px;
+/* Text */
+.title {
+    font-family:'Syne',sans-serif;
+    font-size:3rem; font-weight:800;
+    letter-spacing:-0.02em;
+    color:#fff;
+    margin-top:32px;
     animation: fade-up 1.2s ease both;
 }
-.orb-title span {
+.title span {
     background: linear-gradient(90deg, #F9A602, #ffe066, #F9A602);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: shimmer-text 3s linear infinite;
+    animation: shimmer 3s linear infinite;
 }
-@keyframes shimmer-text {
+@keyframes shimmer {
     0%   { background-position: 0% center; }
     100% { background-position: 200% center; }
 }
-
-/* Subtitle */
-.orb-sub {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: rgba(249,166,2,0.55);
-    margin-top: 10px;
+.subtitle {
+    font-family:'DM Mono',monospace;
+    font-size:0.72rem;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    color:rgba(249,166,2,0.5);
+    margin-top:10px;
     animation: fade-up 1.4s ease both;
 }
 
-/* Enter button */
-.orb-btn-wrap {
-    margin-top: 52px;
-    animation: fade-up 1.6s ease both;
+/* Button */
+.enter-btn {
+    margin-top:50px;
+    animation: fade-up 1.8s ease both;
+}
+button {
+    background: transparent;
+    border: 1.5px solid rgba(249,166,2,0.65);
+    color: #F9A602;
+    font-family:'DM Mono',monospace;
+    font-size:0.78rem;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    padding:14px 52px;
+    border-radius:40px;
+    cursor:pointer;
+    transition:all 0.3s ease;
+}
+button:hover {
+    background: rgba(249,166,2,0.10);
+    border-color: #F9A602;
+    box-shadow: 0 0 28px rgba(249,166,2,0.38);
+    transform: translateY(-2px);
 }
 
 @keyframes fade-up {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0);    }
-}
-
-/* Floating particles */
-.particle {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(249,166,2,0.6);
-    animation: particle-float linear infinite;
-    pointer-events: none;
-}
-@keyframes particle-float {
-    0%   { transform: translateY(100vh) scale(0); opacity: 0; }
-    10%  { opacity: 1; }
-    90%  { opacity: 0.6; }
-    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
-}
-
-/* Streamlit button override for entry page */
-.orb-btn-wrap .stButton > button {
-    background: transparent !important;
-    border: 1.5px solid rgba(249,166,2,0.7) !important;
-    color: #F9A602 !important;
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.8rem !important;
-    letter-spacing: 0.2em !important;
-    text-transform: uppercase !important;
-    padding: 14px 48px !important;
-    border-radius: 40px !important;
-    transition: all 0.3s ease !important;
-    backdrop-filter: blur(4px);
-}
-.orb-btn-wrap .stButton > button:hover {
-    background: rgba(249,166,2,0.12) !important;
-    border-color: #F9A602 !important;
-    box-shadow: 0 0 24px rgba(249,166,2,0.35) !important;
-    transform: translateY(-2px) !important;
+    from { opacity:0; transform:translateY(22px); }
+    to   { opacity:1; transform:translateY(0); }
 }
 </style>
+</head>
+<body>
+<!-- Rings -->
+<div class="ring"></div>
+<div class="ring"></div>
+<div class="ring"></div>
+<div class="ring"></div>
 
-<div class="orb-entry">
-    <!-- Ambient rings -->
-    <div class="orb-ring"></div>
-    <div class="orb-ring"></div>
-    <div class="orb-ring"></div>
-    <div class="orb-ring"></div>
+<!-- Particles -->
+<div class="particle" style="width:3px;height:3px;left:12%;animation-duration:9s;animation-delay:0s;"></div>
+<div class="particle" style="width:2px;height:2px;left:25%;animation-duration:12s;animation-delay:2s;"></div>
+<div class="particle" style="width:4px;height:4px;left:40%;animation-duration:8s;animation-delay:1s;"></div>
+<div class="particle" style="width:2px;height:2px;left:57%;animation-duration:14s;animation-delay:3.5s;"></div>
+<div class="particle" style="width:3px;height:3px;left:70%;animation-duration:10s;animation-delay:0.5s;"></div>
+<div class="particle" style="width:2px;height:2px;left:83%;animation-duration:11s;animation-delay:4s;"></div>
+<div class="particle" style="width:5px;height:5px;left:33%;animation-duration:16s;animation-delay:6s;opacity:0.3;"></div>
+<div class="particle" style="width:2px;height:2px;left:63%;animation-duration:9s;animation-delay:7s;"></div>
 
-    <!-- Particles -->
-    <div class="particle" style="width:3px;height:3px;left:15%;animation-duration:8s;animation-delay:0s;"></div>
-    <div class="particle" style="width:2px;height:2px;left:28%;animation-duration:11s;animation-delay:2s;"></div>
-    <div class="particle" style="width:4px;height:4px;left:42%;animation-duration:9s;animation-delay:1s;"></div>
-    <div class="particle" style="width:2px;height:2px;left:58%;animation-duration:13s;animation-delay:3s;"></div>
-    <div class="particle" style="width:3px;height:3px;left:72%;animation-duration:10s;animation-delay:0.5s;"></div>
-    <div class="particle" style="width:2px;height:2px;left:85%;animation-duration:12s;animation-delay:4s;"></div>
-    <div class="particle" style="width:5px;height:5px;left:35%;animation-duration:15s;animation-delay:6s;opacity:0.3;"></div>
-    <div class="particle" style="width:2px;height:2px;left:65%;animation-duration:9s;animation-delay:7s;"></div>
+<!-- Orb -->
+<div class="orb"></div>
 
-    <!-- Orb -->
-    <div class="orb-sphere"></div>
+<!-- Text -->
+<div class="title">The <span>Orb</span></div>
+<div class="subtitle">Workforce &amp; Project Intelligence</div>
 
-    <!-- Text -->
-    <div class="orb-title">The <span>Orb</span></div>
-    <div class="orb-sub">Workforce & Project Intelligence</div>
+<!-- Enter button — posts message to parent Streamlit window -->
+<div class="enter-btn">
+    <button onclick="window.parent.postMessage({type:'streamlit:setComponentValue', value: true}, '*')">
+        ✦ &nbsp; Enter &nbsp; ✦
+    </button>
 </div>
-""", unsafe_allow_html=True)
 
-    # Enter button — rendered by Streamlit so it works with session state
-    st.markdown('<div class="orb-btn-wrap">', unsafe_allow_html=True)
-    col = st.columns([1, 1, 1])[1]
-    with col:
-        if st.button("✦  Enter  ✦", use_container_width=True, key="enter_btn"):
-            st.session_state["entered"] = True
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+<script>
+// Send enter signal to Streamlit when button clicked
+document.querySelector('button').addEventListener('click', function() {
+    window.parent.postMessage({isStreamlitMessage: true, type: 'streamlit:setComponentValue', value: true}, '*');
+});
+</script>
+</body>
+</html>
+""", height=600, scrolling=False)
+
+    # Listen for the component value (button click)
+    # Use a regular Streamlit button as fallback — hidden but functional
+    st.markdown("""
+    <style>
+    div[data-testid="stVerticalBlock"] > div:last-child .stButton { 
+        position:fixed; bottom:40px; left:50%; transform:translateX(-50%); z-index:99999; opacity:0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    if st.button("Enter", key="enter_btn"):
+        st.session_state["entered"] = True
+        st.rerun()
     st.stop()
 
 # ── Restore sidebar for dashboard ──
