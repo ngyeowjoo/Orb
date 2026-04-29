@@ -879,46 +879,13 @@ with tabs[0]:
         "Absentees in Finance",
         "High cost employees in HR",
     ]
-    # ── Session state init ───────────────────
-    for k, v in [("rag_active_q",""), ("rag_source",""), ("rag_dropdown_idx",0), ("last_sel_rag",""), ("last_rag_typed","")]:
-        if k not in st.session_state: st.session_state[k] = v
-
-    # ── Dropdown — index-controlled ──────────
-    sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES,
-                           index=st.session_state["rag_dropdown_idx"],
-                           label_visibility="collapsed",
-                           key="rag_selectbox")
-
-    # Dropdown changed to a real value → store it, clear custom box, rerun to wipe widget
-    if sel_rag and sel_rag != st.session_state["last_sel_rag"]:
-        st.session_state["last_sel_rag"]   = sel_rag
-        st.session_state["rag_active_q"]   = sel_rag
-        st.session_state["rag_source"]     = "dropdown"
-        st.session_state["last_rag_typed"] = ""
-        st.session_state["rag_input"]      = ""   # clear text widget state
-        st.rerun()
-
-    # ── Custom text box ───────────────────────
-    rag_q = st.text_input("Or type a custom query:", value="",
-                           placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
-                           key="rag_input")
-
-    # Custom query typed → store it, reset dropdown to blank, rerun to wipe dropdown widget
-    if rag_q.strip() and rag_q.strip() != st.session_state["last_rag_typed"]:
-        st.session_state["last_rag_typed"]   = rag_q.strip()
-        st.session_state["rag_active_q"]     = rag_q.strip()
-        st.session_state["rag_source"]       = "custom"
-        st.session_state["last_sel_rag"]     = ""
-        st.session_state["rag_dropdown_idx"] = 0   # snap dropdown to blank
-        st.session_state["rag_selectbox"]    = RAG_EXAMPLES[0]
-        st.rerun()
-
-    # ── Render result from stored active query ──
-    active_q = st.session_state["rag_active_q"]
+    sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES, label_visibility="collapsed")
+    rag_q   = st.text_input("Or type a custom query:", value="",
+                             placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
+                             key="rag_input")
+    # Use typed input if present, otherwise use dropdown selection
+    active_q = rag_q.strip() if rag_q.strip() else sel_rag
     if active_q:
-        # Show which source is active
-        src_label = "📋 Indexed Search" if st.session_state["rag_source"] == "dropdown" else "✏️ Custom Query"
-        st.caption(f"{src_label}: *{active_q}*")
         found = parse_and_render(active_q, key_prefix="rag")
         if not found:
             st.warning("No match found. Try rephrasing or use **Ask Anything (AI)** below for complex questions.")
