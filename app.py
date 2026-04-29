@@ -824,12 +824,12 @@ with tabs[0]:
     sec("🗂 Indexed Search (RAG Query)")
     RAG_GROUPS = {
         "💰 Revenue & Cost": [
-            "Show high cost low KPI employees",
-            "Show high cost employees",
-            "Which project has the best margin?",
-            "Project revenue and cost breakdown",
-            "Do incentives improve performance?",
-            "Which employees contribute below cost?",
+            "   Show high cost low KPI employees",
+            "   Show high cost employees",
+            "   Which project has the best margin?",
+            "   Project revenue and cost breakdown",
+            "   Do incentives improve performance?",
+            "   Which employees contribute below cost?",
         ],
         "⚡ Productivity & Utilisation": [
             "Which employees have low utilisation?",
