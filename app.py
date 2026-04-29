@@ -26,15 +26,38 @@ if "entered" not in st.session_state:
 if not st.session_state["entered"]:
     import streamlit.components.v1 as components
 
-    # Hide Streamlit chrome
+    # Hide all Streamlit chrome
     st.markdown("""
     <style>
     #MainMenu, header, footer, section[data-testid="stSidebar"] { display:none !important; }
     .stApp { background: #000 !important; }
-    .block-container { padding: 0 !important; max-width: 100% !important; }
+    .block-container { padding:0 !important; max-width:100% !important; }
+
+    /* Style the Streamlit Enter button to look like the orb button */
+    div[data-testid="stVerticalBlock"] .stButton { text-align:center; }
+    div[data-testid="stVerticalBlock"] .stButton > button {
+        background: transparent !important;
+        border: 1.5px solid rgba(249,166,2,0.65) !important;
+        color: #F9A602 !important;
+        font-family: 'DM Mono', monospace !important;
+        font-size: 0.78rem !important;
+        letter-spacing: 0.22em !important;
+        text-transform: uppercase !important;
+        padding: 14px 52px !important;
+        border-radius: 40px !important;
+        transition: all 0.3s ease !important;
+        margin-top: 0px !important;
+    }
+    div[data-testid="stVerticalBlock"] .stButton > button:hover {
+        background: rgba(249,166,2,0.10) !important;
+        border-color: #F9A602 !important;
+        box-shadow: 0 0 28px rgba(249,166,2,0.38) !important;
+        transform: translateY(-2px) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
+    # Animated orb — everything except the button
     components.html("""
 <!DOCTYPE html>
 <html>
@@ -43,82 +66,69 @@ if not st.session_state["entered"]:
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-
 body {
-    background: radial-gradient(ellipse at 50% 60%, #1a0a00 0%, #000 70%);
-    min-height: 100vh;
+    background: radial-gradient(ellipse at 50% 55%, #1a0a00 0%, #000 70%);
+    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    font-family: 'Syne', sans-serif;
 }
 
 /* Rings */
 .ring {
     position: absolute;
     border-radius: 50%;
-    border: 1px solid rgba(249,166,2,0.12);
     top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(1);
-    animation: pulse-ring 4s ease-in-out infinite;
+    border: 1px solid rgba(249,166,2,0.12);
+    animation: pulse 4s ease-in-out infinite;
 }
-.ring:nth-child(1) { width:320px; height:320px; animation-delay:0s; }
-.ring:nth-child(2) { width:480px; height:480px; animation-delay:0.7s; border-color:rgba(249,166,2,0.07); }
-.ring:nth-child(3) { width:660px; height:660px; animation-delay:1.4s; border-color:rgba(249,166,2,0.04); }
-.ring:nth-child(4) { width:860px; height:860px; animation-delay:2.1s; border-color:rgba(249,166,2,0.02); }
-@keyframes pulse-ring {
+.ring:nth-child(1) { width:300px;height:300px; animation-delay:0s; }
+.ring:nth-child(2) { width:460px;height:460px; animation-delay:0.7s; border-color:rgba(249,166,2,0.07); }
+.ring:nth-child(3) { width:640px;height:640px; animation-delay:1.4s; border-color:rgba(249,166,2,0.04); }
+.ring:nth-child(4) { width:840px;height:840px; animation-delay:2.1s; border-color:rgba(249,166,2,0.02); }
+@keyframes pulse {
     0%,100% { transform:translate(-50%,-50%) scale(1); opacity:1; }
-    50%      { transform:translate(-50%,-50%) scale(1.05); opacity:0.4; }
+    50%      { transform:translate(-50%,-50%) scale(1.05); opacity:0.35; }
 }
 
 /* Particles */
-.particle {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(249,166,2,0.7);
-    bottom: -10px;
+.p {
+    position:absolute; border-radius:50%;
+    background:rgba(249,166,2,0.7);
     animation: rise linear infinite;
-    pointer-events: none;
+    pointer-events:none; bottom:-6px;
 }
 @keyframes rise {
     0%   { transform:translateY(0) scale(0); opacity:0; }
-    10%  { opacity:1; }
-    90%  { opacity:0.5; }
-    100% { transform:translateY(-105vh) scale(1); opacity:0; }
+    8%   { opacity:1; }
+    88%  { opacity:0.45; }
+    100% { transform:translateY(-102vh) scale(1); opacity:0; }
 }
 
 /* Orb */
 .orb {
-    width: 170px; height: 170px;
-    border-radius: 50%;
-    position: relative;
+    width:160px; height:160px; border-radius:50%; position:relative; z-index:2;
     background: radial-gradient(circle at 38% 35%,
         #fff8e0 0%, #F9A602 25%, #c97f00 52%, #7a4500 78%, #1a0800 100%);
     box-shadow:
-        0 0 55px 18px rgba(249,166,2,0.45),
-        0 0 110px 45px rgba(249,166,2,0.20),
-        0 0 190px 75px rgba(249,166,2,0.08),
-        inset 0 -18px 36px rgba(0,0,0,0.5),
-        inset 0 8px 26px rgba(255,255,255,0.14);
+        0 0 50px 16px rgba(249,166,2,0.45),
+        0 0 100px 40px rgba(249,166,2,0.20),
+        0 0 180px 70px rgba(249,166,2,0.08),
+        inset 0 -16px 32px rgba(0,0,0,0.5),
+        inset 0 8px 24px rgba(255,255,255,0.14);
     animation: float 5s ease-in-out infinite, glow 3s ease-in-out infinite alternate;
-    z-index: 2;
 }
 .orb::before {
-    content:'';
-    position:absolute;
-    top:17%; left:21%;
-    width:36%; height:24%;
+    content:''; position:absolute;
+    top:17%; left:21%; width:36%; height:24%;
     background:radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, transparent 70%);
-    border-radius:50%;
-    transform:rotate(-30deg);
+    border-radius:50%; transform:rotate(-30deg);
 }
 .orb::after {
-    content:'';
-    position:absolute;
-    bottom:20%; right:19%;
-    width:18%; height:11%;
+    content:''; position:absolute;
+    bottom:20%; right:19%; width:18%; height:11%;
     background:radial-gradient(ellipse, rgba(255,220,100,0.35) 0%, transparent 70%);
     border-radius:50%;
 }
@@ -127,124 +137,70 @@ body {
     50%      { transform:translateY(-16px); }
 }
 @keyframes glow {
-    0%   { box-shadow: 0 0 55px 18px rgba(249,166,2,0.45),0 0 110px 45px rgba(249,166,2,0.20),0 0 190px 75px rgba(249,166,2,0.08),inset 0 -18px 36px rgba(0,0,0,0.5),inset 0 8px 26px rgba(255,255,255,0.14); }
-    100% { box-shadow: 0 0 80px 28px rgba(249,166,2,0.62),0 0 160px 65px rgba(249,166,2,0.28),0 0 260px 95px rgba(249,166,2,0.12),inset 0 -18px 36px rgba(0,0,0,0.5),inset 0 8px 26px rgba(255,255,255,0.18); }
+    from { box-shadow: 0 0 50px 16px rgba(249,166,2,0.45),0 0 100px 40px rgba(249,166,2,0.20),0 0 180px 70px rgba(249,166,2,0.08),inset 0 -16px 32px rgba(0,0,0,0.5),inset 0 8px 24px rgba(255,255,255,0.14); }
+    to   { box-shadow: 0 0 75px 26px rgba(249,166,2,0.62),0 0 150px 60px rgba(249,166,2,0.28),0 0 250px 90px rgba(249,166,2,0.12),inset 0 -16px 32px rgba(0,0,0,0.5),inset 0 8px 24px rgba(255,255,255,0.18); }
 }
 
 /* Text */
 .title {
-    font-family:'Syne',sans-serif;
-    font-size:3rem; font-weight:800;
-    letter-spacing:-0.02em;
-    color:#fff;
-    margin-top:32px;
-    animation: fade-up 1.2s ease both;
+    font-family:'Syne',sans-serif; font-size:2.8rem; font-weight:800;
+    letter-spacing:-0.02em; color:#fff; margin-top:30px;
+    animation: fade-up 1.2s ease both; text-align:center;
 }
 .title span {
-    background: linear-gradient(90deg, #F9A602, #ffe066, #F9A602);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    background: linear-gradient(90deg,#F9A602,#ffe066,#F9A602);
+    background-size:200% auto;
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
     animation: shimmer 3s linear infinite;
 }
-@keyframes shimmer {
-    0%   { background-position: 0% center; }
-    100% { background-position: 200% center; }
-}
-.subtitle {
-    font-family:'DM Mono',monospace;
-    font-size:0.72rem;
-    letter-spacing:0.28em;
-    text-transform:uppercase;
-    color:rgba(249,166,2,0.5);
-    margin-top:10px;
-    animation: fade-up 1.4s ease both;
-}
+@keyframes shimmer { to { background-position:200% center; } }
 
-/* Button */
-.enter-btn {
-    margin-top:50px;
-    animation: fade-up 1.8s ease both;
+.sub1 {
+    font-family:'DM Mono',monospace; font-size:0.70rem;
+    letter-spacing:0.26em; text-transform:uppercase;
+    color:rgba(249,166,2,0.55); margin-top:10px;
+    animation: fade-up 1.4s ease both; text-align:center;
 }
-button {
-    background: transparent;
-    border: 1.5px solid rgba(249,166,2,0.65);
-    color: #F9A602;
-    font-family:'DM Mono',monospace;
-    font-size:0.78rem;
-    letter-spacing:0.22em;
-    text-transform:uppercase;
-    padding:14px 52px;
-    border-radius:40px;
-    cursor:pointer;
-    transition:all 0.3s ease;
-}
-button:hover {
-    background: rgba(249,166,2,0.10);
-    border-color: #F9A602;
-    box-shadow: 0 0 28px rgba(249,166,2,0.38);
-    transform: translateY(-2px);
+.sub2 {
+    font-family:'DM Mono',monospace; font-size:0.65rem;
+    letter-spacing:0.20em; text-transform:uppercase;
+    color:rgba(249,166,2,0.30); margin-top:6px;
+    animation: fade-up 1.6s ease both; text-align:center;
 }
 
 @keyframes fade-up {
-    from { opacity:0; transform:translateY(22px); }
+    from { opacity:0; transform:translateY(20px); }
     to   { opacity:1; transform:translateY(0); }
 }
 </style>
 </head>
 <body>
-<!-- Rings -->
-<div class="ring"></div>
-<div class="ring"></div>
-<div class="ring"></div>
-<div class="ring"></div>
+<div class="ring"></div><div class="ring"></div>
+<div class="ring"></div><div class="ring"></div>
 
-<!-- Particles -->
-<div class="particle" style="width:3px;height:3px;left:12%;animation-duration:9s;animation-delay:0s;"></div>
-<div class="particle" style="width:2px;height:2px;left:25%;animation-duration:12s;animation-delay:2s;"></div>
-<div class="particle" style="width:4px;height:4px;left:40%;animation-duration:8s;animation-delay:1s;"></div>
-<div class="particle" style="width:2px;height:2px;left:57%;animation-duration:14s;animation-delay:3.5s;"></div>
-<div class="particle" style="width:3px;height:3px;left:70%;animation-duration:10s;animation-delay:0.5s;"></div>
-<div class="particle" style="width:2px;height:2px;left:83%;animation-duration:11s;animation-delay:4s;"></div>
-<div class="particle" style="width:5px;height:5px;left:33%;animation-duration:16s;animation-delay:6s;opacity:0.3;"></div>
-<div class="particle" style="width:2px;height:2px;left:63%;animation-duration:9s;animation-delay:7s;"></div>
+<div class="p" style="width:3px;height:3px;left:12%;animation-duration:9s;animation-delay:0s;"></div>
+<div class="p" style="width:2px;height:2px;left:25%;animation-duration:12s;animation-delay:2s;"></div>
+<div class="p" style="width:4px;height:4px;left:40%;animation-duration:8s;animation-delay:1s;"></div>
+<div class="p" style="width:2px;height:2px;left:57%;animation-duration:14s;animation-delay:3.5s;"></div>
+<div class="p" style="width:3px;height:3px;left:70%;animation-duration:10s;animation-delay:0.5s;"></div>
+<div class="p" style="width:2px;height:2px;left:83%;animation-duration:11s;animation-delay:4s;"></div>
+<div class="p" style="width:5px;height:5px;left:33%;animation-duration:16s;animation-delay:6s;opacity:0.3;"></div>
+<div class="p" style="width:2px;height:2px;left:63%;animation-duration:9s;animation-delay:7s;"></div>
 
-<!-- Orb -->
 <div class="orb"></div>
-
-<!-- Text -->
 <div class="title">The <span>Orb</span></div>
-<div class="subtitle">Workforce &amp; Project Intelligence</div>
-
-<!-- Enter button — posts message to parent Streamlit window -->
-<div class="enter-btn">
-    <button onclick="window.parent.postMessage({type:'streamlit:setComponentValue', value: true}, '*')">
-        ✦ &nbsp; Enter &nbsp; ✦
-    </button>
-</div>
-
-<script>
-// Send enter signal to Streamlit when button clicked
-document.querySelector('button').addEventListener('click', function() {
-    window.parent.postMessage({isStreamlitMessage: true, type: 'streamlit:setComponentValue', value: true}, '*');
-});
-</script>
+<div class="sub1">Workforce &amp; Project Intelligence</div>
+<div class="sub2">Powered by JoAI</div>
 </body>
 </html>
-""", height=600, scrolling=False)
+""", height=520, scrolling=False)
 
-    # Listen for the component value (button click)
-    # Use a regular Streamlit button as fallback — hidden but functional
-    st.markdown("""
-    <style>
-    div[data-testid="stVerticalBlock"] > div:last-child .stButton { 
-        position:fixed; bottom:40px; left:50%; transform:translateX(-50%); z-index:99999; opacity:0;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    if st.button("Enter", key="enter_btn"):
-        st.session_state["entered"] = True
-        st.rerun()
+    # Real Streamlit button — styled via CSS above to match orb theme
+    col1, col2, col3 = st.columns([2, 1, 2])
+    with col2:
+        if st.button("✦  Enter  ✦", key="enter_btn", use_container_width=True):
+            st.session_state["entered"] = True
+            st.rerun()
     st.stop()
 
 # ── Restore sidebar for dashboard ──
