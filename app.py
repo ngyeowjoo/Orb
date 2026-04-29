@@ -822,63 +822,69 @@ with tabs[0]:
 
     # ── Option A: Indexed Search ──────────────
     sec("🗂 Indexed Search (RAG Query)")
-    RAG_EXAMPLES = [
-        "",
-        # Utilisation
-        "Which employees have low utilisation?",
-        "Top 10 highest utilisation employees",
-        # KPI / Performance
-        "Show high cost low KPI employees",
-        "Who are the top 10 performers?",
-        "Who are underperforming employees?",
-        "Who are under-recognised high performers?",
-        # ROI
-        "Who are top 10% ROI employees?",
-        "Who are bottom 10% ROI employees?",
-        "Which employees contribute below cost?",
-        # Revenue
-        "Revenue per hour by employee",
-        "Bottom 10 revenue per hour employees",
-        "Which project has the best margin?",
-        "Project revenue and cost breakdown",
-        # Cost & Incentives
-        "Show high cost employees",
-        "Do incentives improve performance?",
-        # Overtime
-        "Which employees work the most overtime?",
-        "Overtime vs output analysis",
-        # Leaves
-        "Who has the most sick leave?",
-        "Unplanned leave analysis",
-        "Top 10 absentees",
-        # Managers
-        "Which managers have the best performing teams?",
-        "Which managers have the worst performing teams?",
-        # Attrition
-        "What is the cost of attrition?",
-        "Employee turnover and replacement cost",
-        # Tenure
-        "Performance by tenure",
-        "How do new hires perform?",
-        # Department
-        "Compare KPI by department",
-        "Utilisation breakdown by department",
-        # Correlation
-        "Correlation between cost and performance",
-        # Penalties
-        "Which projects have penalties?",
-        # Project-specific
-        "Low utilisation in Project Apollo",
-        "Top performers in Project Beacon",
-        "High cost employees in Project Catalyst",
-        "Who are bottom ROI in Project Delta?",
-        # Department-specific
-        "Low KPI in Engineering",
-        "Top 5 performers in Sales",
-        "Overtime analysis for Operations",
-        "Absentees in Finance",
-        "High cost employees in HR",
-    ]
+    RAG_GROUPS = {
+        "💰 Revenue & Cost": [
+            "Show high cost low KPI employees",
+            "Show high cost employees",
+            "Which project has the best margin?",
+            "Project revenue and cost breakdown",
+            "Do incentives improve performance?",
+            "Which employees contribute below cost?",
+        ],
+        "⚡ Productivity & Utilisation": [
+            "Which employees have low utilisation?",
+            "Top 10 highest utilisation employees",
+            "Revenue per hour by employee",
+            "Bottom 10 revenue per hour employees",
+            "Which employees work the most overtime?",
+            "Overtime vs output analysis",
+        ],
+        "🏆 Performance & KPI": [
+            "Who are the top 10 performers?",
+            "Who are underperforming employees?",
+            "Who are under-recognised high performers?",
+            "Which managers have the best performing teams?",
+            "Which managers have the worst performing teams?",
+            "Performance by tenure",
+            "How do new hires perform?",
+        ],
+        "🎯 ROI & Strategic": [
+            "Who are top 10% ROI employees?",
+            "Who are bottom 10% ROI employees?",
+            "What is the cost of attrition?",
+            "Employee turnover and replacement cost",
+            "Correlation between cost and performance",
+        ],
+        "🌿 Leaves & Absence": [
+            "Who has the most sick leave?",
+            "Unplanned leave analysis",
+            "Top 10 absentees",
+        ],
+        "🏗 Projects": [
+            "Which projects have penalties?",
+            "Low utilisation in Project Apollo",
+            "Top performers in Project Beacon",
+            "High cost employees in Project Catalyst",
+            "Who are bottom ROI in Project Delta?",
+        ],
+        "🏢 By Department": [
+            "Compare KPI by department",
+            "Utilisation breakdown by department",
+            "Low KPI in Engineering",
+            "Top 5 performers in Sales",
+            "Overtime analysis for Operations",
+            "Absentees in Finance",
+            "High cost employees in HR",
+        ],
+    }
+
+    # Flatten with group headers as disabled options
+    RAG_EXAMPLES = ["Select a question"]
+    RAG_DISABLED  = ["Select a question"]   # items that cannot be selected
+    for group, questions in RAG_GROUPS.items():
+        RAG_EXAMPLES.append(f"── {group} ──")
+        RAG_DISABLED.append(f"── {group} ──")
+        RAG_EXAMPLES.extend(questions)
     # ── Mode toggle ──────────────────────────
     input_mode = st.radio("Input mode", ["📋 Dropdown", "✏️ Custom Query"],
                           horizontal=True, label_visibility="collapsed")
@@ -895,11 +901,13 @@ with tabs[0]:
 
     # ── Show only the active field ────────────
     if input_mode == "📋 Dropdown":
-        sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES,
+        sel_rag = st.selectbox("Select a question", RAG_EXAMPLES,
                                label_visibility="collapsed", key="rag_selectbox")
-        if sel_rag and sel_rag != st.session_state["rag_active_q"]:
+        # Only act on real questions, not headers or placeholder
+        is_real = sel_rag and sel_rag not in RAG_DISABLED
+        if is_real and sel_rag != st.session_state["rag_active_q"]:
             st.session_state["rag_active_q"] = sel_rag
-        active_q = st.session_state["rag_active_q"]
+        active_q = st.session_state["rag_active_q"] if st.session_state["rag_active_q"] not in RAG_DISABLED else ""
 
     else:  # Custom Query
         rag_q = st.text_input("Type your query:", value="",
