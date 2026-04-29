@@ -878,13 +878,15 @@ with tabs[0]:
         ],
     }
 
-    # Flatten with group headers as disabled options
+    # Flatten with group headers as disabled options, questions indented
     RAG_EXAMPLES = ["Select a question"]
-    RAG_DISABLED  = ["Select a question"]   # items that cannot be selected
+    RAG_DISABLED  = {"Select a question"}
     for group, questions in RAG_GROUPS.items():
-        RAG_EXAMPLES.append(f"── {group} ──")
-        RAG_DISABLED.append(f"── {group} ──")
-        RAG_EXAMPLES.extend(questions)
+        header = f"── {group} ──"
+        RAG_EXAMPLES.append(header)
+        RAG_DISABLED.add(header)
+        for q in questions:
+            RAG_EXAMPLES.append(f"   {q}")   # 3-space indent for visual grouping
     # ── Mode toggle ──────────────────────────
     input_mode = st.radio("Input mode", ["📋 Dropdown", "✏️ Custom Query"],
                           horizontal=True, label_visibility="collapsed")
@@ -902,12 +904,14 @@ with tabs[0]:
     # ── Show only the active field ────────────
     if input_mode == "📋 Dropdown":
         sel_rag = st.selectbox("Select a question", RAG_EXAMPLES,
+                               index=0,
                                label_visibility="collapsed", key="rag_selectbox")
-        # Only act on real questions, not headers or placeholder
-        is_real = sel_rag and sel_rag not in RAG_DISABLED
-        if is_real and sel_rag != st.session_state["rag_active_q"]:
-            st.session_state["rag_active_q"] = sel_rag
-        active_q = st.session_state["rag_active_q"] if st.session_state["rag_active_q"] not in RAG_DISABLED else ""
+        # Strip indent and ignore headers / placeholder
+        sel_clean = sel_rag.strip() if sel_rag else ""
+        is_real   = sel_clean and sel_clean not in RAG_DISABLED
+        if is_real and sel_clean != st.session_state["rag_active_q"]:
+            st.session_state["rag_active_q"] = sel_clean
+        active_q  = st.session_state["rag_active_q"] if st.session_state["rag_active_q"] not in RAG_DISABLED else ""
 
     else:  # Custom Query
         rag_q = st.text_input("Type your query:", value="",
