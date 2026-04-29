@@ -31,13 +31,13 @@ if not st.session_state["entered"]:
     <style>
     #MainMenu, header, footer, section[data-testid="stSidebar"] { display:none !important; }
     .stApp { background: #000 !important; }
-    .block-container { padding:0 !important; max-width:100% !important; }
+    .block-container { padding:2 !important; max-width:100% !important; }
 
     /* Style the Streamlit Enter button to look like the orb button */
     div[data-testid="stVerticalBlock"] .stButton { text-align:center; }
     div[data-testid="stVerticalBlock"] .stButton > button {
         background: transparent !important;
-        border: 10.5px solid rgba(249,166,2,0.65) !important;
+        border: 1.5px solid rgba(249,166,2,0.65) !important;
         color: #F9A602 !important;
         font-family: 'DM Mono', monospace !important;
         font-size: 0.78rem !important;
