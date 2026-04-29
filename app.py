@@ -879,12 +879,37 @@ with tabs[0]:
         "Absentees in Finance",
         "High cost employees in HR",
     ]
-    sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES, label_visibility="collapsed")
-    rag_q   = st.text_input("Or type a custom query:", value="",
-                             placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
-                             key="rag_input")
-    # Use typed input if present, otherwise use dropdown selection
-    active_q = rag_q.strip() if rag_q.strip() else sel_rag
+    # ── Mode toggle ──────────────────────────
+    input_mode = st.radio("Input mode", ["📋 Dropdown", "✏️ Custom Query"],
+                          horizontal=True, label_visibility="collapsed")
+
+    # Reset stored query when mode switches
+    if "rag_mode" not in st.session_state:
+        st.session_state["rag_mode"] = input_mode
+    if input_mode != st.session_state["rag_mode"]:
+        st.session_state["rag_mode"]     = input_mode
+        st.session_state["rag_active_q"] = ""
+
+    if "rag_active_q" not in st.session_state:
+        st.session_state["rag_active_q"] = ""
+
+    # ── Show only the active field ────────────
+    if input_mode == "📋 Dropdown":
+        sel_rag = st.selectbox("Select a query →", RAG_EXAMPLES,
+                               label_visibility="collapsed", key="rag_selectbox")
+        if sel_rag and sel_rag != st.session_state["rag_active_q"]:
+            st.session_state["rag_active_q"] = sel_rag
+        active_q = st.session_state["rag_active_q"]
+
+    else:  # Custom Query
+        rag_q = st.text_input("Type your query:", value="",
+                               placeholder="e.g. 'top 10% ROI employees' or 'low utilisation'",
+                               key="rag_input")
+        if rag_q.strip() and rag_q.strip() != st.session_state["rag_active_q"]:
+            st.session_state["rag_active_q"] = rag_q.strip()
+        active_q = st.session_state["rag_active_q"]
+
+    # ── Render results ────────────────────────
     if active_q:
         found = parse_and_render(active_q, key_prefix="rag")
         if not found:
