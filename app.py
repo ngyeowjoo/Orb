@@ -31,7 +31,7 @@ if not st.session_state["entered"]:
     <style>
     #MainMenu, header, footer, section[data-testid="stSidebar"] { display:none !important; }
     .stApp { background: #000 !important; }
-    .block-container { padding:2 !important; max-width:100% !important; }
+    .block-container { padding:0 !important; max-width:100% !important; }
 
     /* Style the Streamlit Enter button to look like the orb button */
     div[data-testid="stVerticalBlock"] .stButton { text-align:center; }
@@ -156,13 +156,13 @@ body {
 @keyframes shimmer { to { background-position:200% center; } }
 
 .sub1 {
-    font-family:'DM Mono',monospace; font-size:0.70rem;
+    font-family:'DM Mono',monospace; font-size:0.85rem;
     letter-spacing:0.26em; text-transform:uppercase;
     color:rgba(249,166,2,0.55); margin-top:10px;
     animation: fade-up 1.4s ease both; text-align:center;
 }
 .sub2 {
-    font-family:'DM Mono',monospace; font-size:0.65rem;
+    font-family:'DM Mono',monospace; font-size:0.85rem;
     letter-spacing:0.20em; text-transform:uppercase;
     color:rgba(249,166,2,0.55); margin-top:6px;
     animation: fade-up 1.6s ease both; text-align:center;
