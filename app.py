@@ -72,8 +72,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding-top: 80px;
+    justify-content: flex-start;
+    padding-top: 200px;
     overflow: hidden;
 }
 
