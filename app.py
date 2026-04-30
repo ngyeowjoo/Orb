@@ -67,7 +67,7 @@ if not st.session_state["entered"]:
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-    background: radial-gradient(ellipse at 50% 55%, #1a0a00 0%, #000 70%);
+    background: radial-gradient(ellipse at 50% 55%, #1a0a00 0%, #191919 70%);
     height: 100vh;
     display: flex;
     flex-direction: column;
