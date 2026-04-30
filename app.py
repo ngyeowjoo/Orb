@@ -87,8 +87,8 @@ body {
 }
 .ring:nth-child(1) { width:300px;height:300px; animation-delay:0s; }
 .ring:nth-child(2) { width:460px;height:460px; animation-delay:0.7s; border-color:rgba(249,166,2,0.07); }
-.ring:nth-child(3) { width:640px;height:640px; animation-delay:1.4s; border-color:rgba(249,166,2,0.04); }
-.ring:nth-child(4) { width:840px;height:840px; animation-delay:2.1s; border-color:rgba(249,166,2,0.02); }
+.ring:nth-child(3) { width:640px;height:640px; animation-delay:1.4s; border-color:rgba(249,166,2,0.05); }
+.ring:nth-child(4) { width:840px;height:840px; animation-delay:2.1s; border-color:rgba(249,166,2,0.03); }
 @keyframes pulse {
     0%,100% { transform:translate(-50%,-50%) scale(1); opacity:1; }
     50%      { transform:translate(-50%,-50%) scale(1.05); opacity:0.35; }
