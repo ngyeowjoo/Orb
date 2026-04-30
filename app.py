@@ -30,7 +30,7 @@ if not st.session_state["entered"]:
     st.markdown("""
     <style>
     #MainMenu, header, footer, section[data-testid="stSidebar"] { display:none !important; }
-    .stApp { background: #000 !important; }
+    .stApp { background: #191919 !important; }
     .block-container { padding:0 !important; max-width:100% !important; }
 
     /* Style the Streamlit Enter button to look like the orb button */
