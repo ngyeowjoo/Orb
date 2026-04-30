@@ -30,7 +30,7 @@ if not st.session_state["entered"]:
     st.markdown("""
     <style>
     #MainMenu, header, footer, section[data-testid="stSidebar"] { display:none !important; }
-    .stApp { background: #191919 !important; }
+    .stApp { background: #000 !important; }
     .block-container { padding:0 !important; max-width:100% !important; }
 
     /* Style the Streamlit Enter button to look like the orb button */
@@ -67,7 +67,7 @@ if not st.session_state["entered"]:
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-    background: radial-gradient(ellipse at 50% 55%, #1a0a00 0%, #191919 70%);
+    background: radial-gradient(ellipse at 50% 55%, #1a0a00 0%, #000 70%);
     height: 100vh;
     display: flex;
     flex-direction: column;
