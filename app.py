@@ -96,7 +96,7 @@ body {
 
 /* Particles */
 .p {
-    position:absolute; border-radius:50%;
+    position:absolute; border-radius:60%;
     background:rgba(249,166,2,0.7);
     animation: rise linear infinite;
     pointer-events:none; bottom:-6px;
