@@ -82,7 +82,7 @@ body {
     position: absolute;
     border-radius: 50%;
     top: 50%; left: 50%;
-    border: 5px solid rgba(249,166,2,0.12);
+    border: 15px solid rgba(249,166,2,0.12);
     animation: pulse 4s ease-in-out infinite;
 }
 .ring:nth-child(1) { width:300px;height:300px; animation-delay:0s; }
