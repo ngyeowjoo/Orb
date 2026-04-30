@@ -82,7 +82,7 @@ body {
     position: absolute;
     border-radius: 50%;
     top: 50%; left: 50%;
-    border: 15px solid rgba(249,166,2,0.12);
+    border: 10px solid rgba(249,166,2,0.12);
     animation: pulse 4s ease-in-out infinite;
 }
 .ring:nth-child(1) { width:300px;height:300px; animation-delay:0s; }
@@ -157,13 +157,13 @@ body {
 @keyframes shimmer { to { background-position:200% center; } }
 
 .sub1 {
-    font-family:'DM Mono',monospace; font-size:0.70rem;
+    font-family:'DM Mono',monospace; font-size:0.80rem;
     letter-spacing:0.26em; text-transform:uppercase;
     color:rgba(249,166,2,0.55); margin-top:10px;
     animation: fade-up 1.4s ease both; text-align:center;
 }
 .sub2 {
-    font-family:'DM Mono',monospace; font-size:0.70rem;
+    font-family:'DM Mono',monospace; font-size:0.80rem;
     letter-spacing:0.26em; text-transform:uppercase;
     color:rgba(249,166,2,0.55); margin-top:6px;
     animation: fade-up 1.6s ease both; text-align:center;
