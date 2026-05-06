@@ -526,7 +526,7 @@ def call_ai(system: str, user: str) -> str:
     else:  # Claude
         key = st.secrets.get("ANTHROPIC_API_KEY", None)
         if not key:
-            return "⚠ Add `ANTHROPIC_API_KEY` to Streamlit secrets to enable JoAI Insights."
+            return "⚠ Add `ANTHROPIC_API_KEY` to Streamlit secrets to enable Claude insights."
         r = requests.post(
             "https://api.anthropic.com/v1/messages",
             headers={"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},
@@ -1206,7 +1206,7 @@ with tabs[1]:
                      title="Incentive Ratio vs KPI (bubble = penalty)")
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    sec("🧠 JoAI Insight")
+    sec("🧠 Claude Insight")
     if st.button("🧠 Get AI Insight", key="btn_rev", use_container_width=False):
         with st.spinner("Generating insight..."):
             ai_box(insight("revenue and cost", ps[["project_name","total_revenue","total_cost","total_penalty","margin","avg_kpi"]].round(2).to_string(),
@@ -1257,7 +1257,7 @@ with tabs[2]:
     fig.add_hline(y=util_thr, line_dash="dash", line_color=C_BAD, annotation_text="Threshold")
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    sec("🧠 JoAI Insight")
+    sec("🧠 Claude Insight")
     if st.button("🧠 Get AI Insight", key="btn_prod", use_container_width=False):
         with st.spinner("Generating insight..."):
             ai_box(insight("productivity", es_f[["employee_id","avg_util","avg_kpi","avg_rev_per_hr","avg_overtime"]].describe().round(3).to_string(),
@@ -1306,7 +1306,7 @@ with tabs[3]:
     fig.update_traces(textposition="top center", textfont_size=9)
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    sec("🧠 JoAI Insight")
+    sec("🧠 Claude Insight")
     if st.button("🧠 Get AI Insight", key="btn_red", use_container_width=False):
         with st.spinner("Generating insight..."):
             ai_box(insight("redundancy", neg[["employee_id","role","avg_total_cost","net_contribution"]].head(10).round(2).to_string(),
@@ -1361,7 +1361,7 @@ with tabs[4]:
                  color="avg_kpi", color_continuous_scale=["#fff8e1", C_AMBER], title="Avg KPI by Tenure")
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    sec("🧠 JoAI Insight")
+    sec("🧠 Claude Insight")
     if st.button("🧠 Get AI Insight", key="btn_perf", use_container_width=False):
         with st.spinner("Generating insight..."):
             ai_box(insight("performance", mgr_p.round(3).to_string(),
@@ -1413,7 +1413,7 @@ with tabs[5]:
                      hover_data=["name","role"], title="Incentive Spend vs KPI")
     fig.update_layout(**CT); fmt_axes(fig); st.plotly_chart(fig, use_container_width=True)
 
-    sec("🧠 JoAI Insight")
+    sec("🧠 Claude Insight")
     if st.button("🧠 Get AI Insight", key="btn_strat", use_container_width=False):
         with st.spinner("Generating insight..."):
             ai_box(insight("strategic ROI", es_f[["employee_id","roi","net_contribution","avg_incentive","avg_kpi"]].describe().round(3).to_string(),
@@ -1455,7 +1455,7 @@ with tabs[6]:
     st.markdown("### Project Summary Table")
     st.dataframe(ps[["project_name","status","total_revenue","total_cost","total_penalty","margin","avg_kpi","avg_util","emp_count"]].round(2), use_container_width=True)
 
-    sec("🧠 JoAI Insight")
+    sec("🧠 Claude Insight")
     if st.button("🧠 Get AI Insight", key="btn_proj", use_container_width=False):
         with st.spinner("Generating insight..."):
             ai_box(insight("project portfolio", ps[["project_name","total_revenue","total_penalty","margin","avg_kpi","status"]].round(2).to_string(),
@@ -1505,7 +1505,7 @@ with tabs[7]:
 
     st.dataframe(lv_emp.sort_values("absenteeism", ascending=False), use_container_width=True)
 
-    sec("🧠 JoAI Insight")
+    sec("🧠 Claude Insight")
     if st.button("🧠 Get AI Insight", key="btn_leave", use_container_width=False):
         with st.spinner("Generating insight..."):
             ai_box(insight("leave patterns", lv_emp.describe().round(2).to_string(),
